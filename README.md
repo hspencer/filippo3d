@@ -1,8 +1,8 @@
-# DrawLander
+# Filippo 3D
 
-A 3D drawing program built on [Processing](http://www.processing.org) and based on [Fillipo 3D](https://github.com/hspencer/filippo3d)
+A 3D drawing program built with [Processing](http://www.processing.org).
 
-## Keyboard
+## Keyboard Interface
 ###VIEWS
  *  (F)ront
  *  (T)op
