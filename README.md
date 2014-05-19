@@ -4,44 +4,44 @@ A 3D drawing program built with [Processing](http://www.processing.org).
 
 ## Keyboard Interface
 ###VIEWS
- *  (F)ront
- *  (T)op
- *  (L)eft
- *  (R)ight
- *  (B)ottom
- *  bac(K)
+ *  <code>(F)</code>ront
+ *  <code>(T)</code>op
+ *  <code>(L)</code>eft
+ *  <code>(R)</code>ight
+ *  <code>(B)</code>ottom
+ *  bac<code>(K)</code>
  *  SPACEBAR or MOUSE RIGHT BUTTON switches to free rotation mode
  
-### MODEL TRANSLATION<br>(relative to mouseX and screen X dimension)
- *  (1) While pressed, translates the drawinng in X
- *  (2) While pressed, translates the drawinng in Y
- *  (3) While pressed, translates the drawinng in Z
+### MODEL TRANSLATION<br><code>(relative to mouseX and screen X dimension)</code>
+ *  <code>(1)</code> While pressed, translates the drawinng in X
+ *  <code>(2)</code> While pressed, translates the drawinng in Y
+ *  <code>(3)</code> While pressed, translates the drawinng in Z
  
-### MODEL SCALATION<br>(relative to mouseX and screen X dimension)
- *  (4) While pressed, scales the drawinng in X
- *  (5) While pressed, scales the drawinng in Y
- *  (6) While pressed, scales the drawinng in Z
+### MODEL SCALATION<br><code>(relative to mouseX and screen X dimension)</code>
+ *  <code>(4)</code> While pressed, scales the drawinng in X
+ *  <code>(5)</code> While pressed, scales the drawinng in Y
+ *  <code>(6)</code> While pressed, scales the drawinng in Z
  
 ### MODEL ROTATION
- *  (X) increases the rotation angle in X
- *  (x) decreases the rotation angle in X
- *  (Y) increases the rotation angle in Y
- *  (y) decreases the rotation angle in Y
- *  (Z) increases the rotation angle in Z
- *  (z) decreases the rotation angle in Z
+ *  <code>(X)</code> increases the rotation angle in X
+ *  <code>(x)</code> decreases the rotation angle in X
+ *  <code>(Y)</code> increases the rotation angle in Y
+ *  <code>(y)</code> decreases the rotation angle in Y
+ *  <code>(Z)</code> increases the rotation angle in Z
+ *  <code>(z)</code> decreases the rotation angle in Z
  
 ### EXPORT
- *  (p) exports a PDF of the current view
- *  (P) exports a series of 36 PDFs rotating in Y
- *  (d) exports a DXF of the 3D model
+ *  <code>(p)</code> exports a PDF of the current view
+ *  <code>(P)</code> exports a series of 36 PDFs rotating in Y
+ *  <code>(d)</code> exports a DXF of the 3D model
  
 ###  OTHER
- *  (A)xis turn ON/OFF
- *  (e)rase the selected stroke
- *  (u)ndo
- *  (m) changes current mode, draw or select
- *  (s) Select Everything
- *  (w) unselect everything
- *  (N) new drawing (erases everything and resets view)
- *  (,) reduce stroke size
- *  (.) increase stroke size
+ *  <code>(A)</code>xis turn ON/OFF
+ *  <code>(e)</code>rase the selected stroke
+ *  <code>(u)</code>ndo
+ *  <code>(m)</code> changes current mode, draw or select
+ *  <code>(s)</code> Select Everything
+ *  <code>(w)</code> unselect everything
+ *  <code>(N)</code> new drawing (erases everything and resets view)
+ *  <code>(,)</code> reduce stroke size
+ *  <code>(.)</code> increase stroke size
