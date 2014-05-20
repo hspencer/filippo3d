@@ -2,7 +2,7 @@
 
 This is a 3D drawing program built with [Processing](http://www.processing.org) and named after Filippo Brunelleschi, the inventor of perspective.
 
-The basic principle of Filippo3D is to draw on the screen, which is the <code>z = 0</code> surface; you always have to fix your lines in that plane, but your drawing can move in freely in 3D space. 
+The basic principle of Filippo3D is to draw on the screen, which is the <code>z = 0</code> surface; you always have to fix your lines in that plane, but your drawing can move freely in 3D space. 
 
 Drawings can be exported to single Pdfs, Pdf series like a flipbook of your model rotating and DXF. 
 
