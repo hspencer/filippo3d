@@ -36,10 +36,13 @@ void setup() {
   nx = 0;
   ny = 0;
   nz = 0;
+  
   RED = 255;
   GREEN = 255;
   BLUE = 255;
   STRK = 1;
+  
+  cursor(CROSS);
   smooth();
 }
 
