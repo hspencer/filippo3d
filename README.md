@@ -6,6 +6,8 @@ The basic principle of Filippo3D is to draw on the screen, which is the <code>z 
 
 Drawings can be exported to single Pdfs, Pdf series like a flipbook of your model rotating and DXF. 
 
+![Filippo 3D Screenshot](http://cl.ly/image/1i320j2f1k0k)
+
 ## Keys
 
 ### Views
