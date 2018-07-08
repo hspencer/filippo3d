@@ -33,7 +33,7 @@ boolean fillstrokes = false;
 boolean instructions = false;
 boolean rightdistance = true;
 boolean drawmode = true;
-boolean showcontrols = false;
+boolean showcontrols = true;
 boolean click = false;
 boolean exporting360 = false;
 boolean drawPlane = false;
@@ -63,4 +63,3 @@ void keepVariablesInBounds(){
   if (STRK < 0.1){STRK = 20.0;}
   if (STRK > 20.0){STRK = 0.1;}
 }
-

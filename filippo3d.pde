@@ -7,7 +7,9 @@ import processing.pdf.*;
 import processing.dxf.*;
 
 void setup() {
-  size(displayWidth, displayHeight, OPENGL);
+  fullScreen(OPENGL);
+  pixelDensity(2);
+  //size(displayWidth, displayHeight, OPENGL);
   helv     = loadFont("helv.vlw");
   loxica   = loadFont("loxica.vlw");
   filippo  = loadFont("filippo.vlw");
@@ -50,6 +52,7 @@ void setup() {
 void draw() {
   COLOR = color(RED, GREEN, BLUE);
   keepVariablesInBounds();
+  
   background(0);
   drawquit();
   if (showcontrols) {
@@ -79,9 +82,3 @@ void draw() {
   }
   keyboardinput();
 }
-
-
-
-
-
-

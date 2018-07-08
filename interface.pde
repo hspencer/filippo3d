@@ -7,9 +7,10 @@ void controls(){
   text("FILIPPO",40,36);
   stroke(255);
   noFill();
-
-  // rotation controls
   rect(0,0,122,height);
+  
+  // rotation controls
+  
   for(int i=1; i<4; i++){
     stroke(255,40);
     noFill();
@@ -334,4 +335,3 @@ void cross(int x, int y){
   line(-s,0,s,s,0,s);
   line(0,-s,s,0,s,s);
 }
-
