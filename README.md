@@ -8,6 +8,9 @@ Drawings can be exported to single Pdfs, Pdf series like a flipbook of your mode
 
 ![Filippo 3D Screenshot](data/drawing-chair.png)
 
+### Update
+This project is outdated but a minimal [P5js version](https://herbertspencer.net/filippo3d/) is available online. It would be nice to translate te whole project and develop a robust interface with the original concept.
+
 ## Keys
 
 ### Views
@@ -61,4 +64,4 @@ This modifications are relative to mouse position in the X dimension fo the scre
 * <code>,</code> reduce stroke size
 * <code>.</code> increase stroke size
 
-Original [blog post](http://www.herbertspencer.net/2006/filippo-3d-ver-01/) and comments [here](http://www.herbertspencer.net/2006/filippo-3d-ver-01/#comments), please. All feedback is highly appreciated.
+Original [blog post](https://herbertspencer.net/2006/12/filippo-3d-ver-01/). All feedback is highly appreciated.
