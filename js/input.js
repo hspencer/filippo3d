@@ -241,6 +241,7 @@ function keyPressed() {
     case 'o':
     case 'O':
       useOrtho = !useOrtho;
+      syncProjectionButtons();
       break;
 
     case 'e':

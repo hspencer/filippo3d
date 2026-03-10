@@ -31,6 +31,16 @@ function setupUI() {
     document.getElementById('btn-select').classList.add('active');
   });
 
+  // Projection buttons
+  document.getElementById('btn-persp').addEventListener('click', () => {
+    useOrtho = false;
+    syncProjectionButtons();
+  });
+  document.getElementById('btn-ortho').addEventListener('click', () => {
+    useOrtho = true;
+    syncProjectionButtons();
+  });
+
   // View buttons
   document.querySelectorAll('.cube-face').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -80,4 +90,12 @@ function syncUIFromState() {
   if (weightSlider) weightSlider.value = strokeW;
   if (weightVal) weightVal.textContent = strokeW;
   if (colorInput) colorInput.value = strokeColor;
+  syncProjectionButtons();
+}
+
+function syncProjectionButtons() {
+  let btnP = document.getElementById('btn-persp');
+  let btnO = document.getElementById('btn-ortho');
+  if (btnP) btnP.classList.toggle('active', !useOrtho);
+  if (btnO) btnO.classList.toggle('active', useOrtho);
 }
