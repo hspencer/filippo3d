@@ -72,7 +72,8 @@ function drawAxis() {
   line(0, 0, 0, 0, 0, len);
 
   // Small grid on XY plane (drawing plane)
-  stroke(255, 255, 255, 15);
+  let gridAlpha = darkMode ? 25 : 30;
+  stroke(darkMode ? 255 : 0, gridAlpha);
   strokeWeight(0.5);
   let gridSize = 400;
   let step = 50;

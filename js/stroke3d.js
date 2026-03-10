@@ -6,7 +6,6 @@ class Stroke3D {
     this.col = col || '#ffffff';
     this.weight = weight || 2;
     this.selected = false;
-    this.screenPoints = []; // cached screen projections, updated each frame
   }
 
   addPoint(x, y, z, pressure) {
@@ -40,15 +39,6 @@ class Stroke3D {
 
   draw(highlight) {
     if (this.points.length < 2) return;
-
-    // Cache screen projections (we're inside the transform context here)
-    this.screenPoints = [];
-    for (let p of this.points) {
-      this.screenPoints.push({
-        x: screenX(p.x, p.y, p.z),
-        y: screenY(p.x, p.y, p.z)
-      });
-    }
 
     let c = color(this.col);
     if (this.selected || highlight) {
@@ -91,10 +81,35 @@ class Stroke3D {
     }
   }
 
-  // Check if a screen point is near this stroke (uses cached projections)
+  // Project a model-space point to screen using current rotation + pan
+  _modelToScreen(p) {
+    let cx = Math.cos(ux), sx2 = Math.sin(ux);
+    let cy = Math.cos(uy), sy = Math.sin(uy);
+    let cz = Math.cos(uz), sz = Math.sin(uz);
+
+    // Apply X rotation
+    let xy = cx * p.y - sx2 * p.z;
+    let xz = sx2 * p.y + cx * p.z;
+
+    // Apply Y rotation
+    let yx = cy * p.x + sy * xz;
+    let yz = -sy * p.x + cy * xz;
+
+    // Apply Z rotation
+    let zx = cz * yx - sz * xy;
+    let zy = sz * yx + cz * xy;
+
+    return {
+      x: zx + panX + width / 2,
+      y: zy + panY + height / 2
+    };
+  }
+
+  // Check if a screen point is near this stroke
   hitTest(sx, sy, threshold) {
     threshold = threshold || 12;
-    for (let sp of this.screenPoints) {
+    for (let p of this.points) {
+      let sp = this._modelToScreen(p);
       let d = Math.sqrt((sx - sp.x) ** 2 + (sy - sp.y) ** 2);
       if (d < threshold) return true;
     }
