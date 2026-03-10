@@ -249,3 +249,83 @@ function exportPNG() {
   let timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   saveCanvas('filippo3d-' + timestamp, 'png');
 }
+
+function exportJSON() {
+  let data = {
+    version: VERSION,
+    view: { ux, uy, uz, panX, panY, panZ, useOrtho, darkMode },
+    strokes: trazos.map(t => ({
+      color: t.col,
+      weight: t.weight,
+      points: t.points.map(p => ({
+        x: Math.round(p.x * 100) / 100,
+        y: Math.round(p.y * 100) / 100,
+        z: Math.round(p.z * 100) / 100,
+        pressure: Math.round((p.pressure || 0.5) * 1000) / 1000
+      }))
+    }))
+  };
+  let json = JSON.stringify(data, null, 2);
+  let blob = new Blob([json], { type: 'application/json' });
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url;
+  let timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  a.download = 'filippo3d-' + timestamp + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJSON() {
+  let input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = (e) => {
+    let file = e.target.files[0];
+    if (!file) return;
+    let reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        let data = JSON.parse(ev.target.result);
+        loadFromJSON(data);
+      } catch (err) {
+        console.error('Invalid JSON file', err);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function loadFromJSON(data) {
+  trazos = [];
+  undoStack = [];
+  transformSnapshot = null;
+
+  if (data.view) {
+    ux = data.view.ux || 0; uy = data.view.uy || 0; uz = data.view.uz || 0;
+    nx = ux; ny = uy; nz = uz;
+    panX = data.view.panX || 0; panY = data.view.panY || 0; panZ = data.view.panZ || 0;
+    if (data.view.useOrtho !== undefined) {
+      useOrtho = data.view.useOrtho;
+      syncProjectionButtons();
+    }
+    if (data.view.darkMode !== undefined && data.view.darkMode !== darkMode) {
+      toggleTheme();
+    }
+  }
+
+  for (let s of (data.strokes || [])) {
+    let stroke = new Stroke3D(s.color, s.weight);
+    stroke.points = s.points.map(p => {
+      let v = createVector(p.x, p.y, p.z);
+      v.pressure = p.pressure || 0.5;
+      return v;
+    });
+    trazos.push(stroke);
+  }
+
+  currentView = null;
+  updateViewButtons();
+  updateStatus();
+}

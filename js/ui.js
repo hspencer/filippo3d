@@ -62,6 +62,8 @@ function setupUI() {
   document.getElementById('btn-undo').addEventListener('click', undo);
   document.getElementById('btn-clear').addEventListener('click', newDrawing);
   document.getElementById('btn-export').addEventListener('click', exportPNG);
+  document.getElementById('btn-save').addEventListener('click', exportJSON);
+  document.getElementById('btn-load').addEventListener('click', importJSON);
 
   // Version label
   let vLabel = document.getElementById('version-label');

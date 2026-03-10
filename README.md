@@ -63,7 +63,7 @@ With selected strokes:
 
 ## Legacy
 
-The original Processing (Java) version is preserved in the [`processing-original`](https://github.com/hspencer/filippo3d/tree/processing-original) branch and tagged as [`v1.0`](https://github.com/hspencer/filippo3d/releases/tag/v1.0). Original [blog post](https://herbertspencer.net/2006/12/filippo-3d-ver-01/).
+The original program was written in Processing (Java) in 2006, during the [Interactive Image](https://golancourses.net/) class taught by professor [Golan Levin](https://www.flong.com/). That version is preserved in the [`processing-original`](https://github.com/hspencer/filippo3d/tree/processing-original) branch and tagged as [`v1.0`](https://github.com/hspencer/filippo3d/releases/tag/v1.0). Original [blog post](https://herbertspencer.net/2006/12/filippo-3d-ver-01/).
 
 ## License
 
