@@ -1,84 +1,61 @@
-// Filippo 3D - Input handling (pointer events, keyboard, touch)
+// Filippo 3D - Input handling
 
-// ── Pointer Events (unified mouse + stylus + touch) ──
+// ── Pointer Events (only for pressure + pointer type) ──
 
 function setupPointerEvents() {
-  // Wait a frame for p5 canvas to be ready
   setTimeout(() => {
     let canvas = document.querySelector('canvas');
     if (!canvas) return;
-
-    canvas.style.touchAction = 'none'; // prevent browser gestures
-
-    canvas.addEventListener('pointerdown', handlePointerDown);
-    canvas.addEventListener('pointermove', handlePointerMove);
-    canvas.addEventListener('pointerup', handlePointerUp);
-    canvas.addEventListener('pointercancel', handlePointerUp);
-
-    // Prevent context menu on right-click/long-press
+    canvas.style.touchAction = 'none';
+    canvas.addEventListener('pointerdown', e => {
+      currentPressure = e.pressure || 0.5;
+      pointerType = e.pointerType || 'mouse';
+    });
+    canvas.addEventListener('pointermove', e => {
+      currentPressure = e.pressure || 0.5;
+    });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
   }, 100);
 }
 
-function getCanvasXY(e) {
-  // Convert page coordinates to p5 WEBGL coordinates (origin at center)
-  let canvas = document.querySelector('canvas');
-  let rect = canvas.getBoundingClientRect();
-  let px = e.clientX - rect.left;
-  let py = e.clientY - rect.top;
-  return {
-    sx: px,                    // screen coords (for hit testing)
-    sy: py,
-    x: px - width / 2,        // WEBGL coords (origin at center)
-    y: py - height / 2
-  };
-}
+// ── p5.js mouse handlers (reliable cross-browser drawing) ──
 
-function handlePointerDown(e) {
-  e.preventDefault();
-
-  currentPressure = e.pressure || 0.5;
-  pointerType = e.pointerType || 'mouse';
-
-  let pos = getCanvasXY(e);
-
-  if (freeRotate) {
-    // In free rotate mode, just capture for delta tracking
+function mousePressed() {
+  // Ignore clicks on UI panel
+  if (mouseX < 220 && !document.getElementById('panel').classList.contains('collapsed')) {
     return;
   }
 
+  if (freeRotate) return;
+
   if (drawMode) {
+    let x = mouseX - width / 2;
+    let y = mouseY - height / 2;
     trazoActual = new Stroke3D(strokeColor, strokeW);
-    trazoActual.addPoint(pos.x, pos.y, 0, currentPressure);
+    trazoActual.addPoint(x, y, 0, currentPressure);
     isDrawing = true;
   } else {
-    // Select mode: hit test
-    handleSelection(pos.sx, pos.sy);
+    handleSelection(mouseX, mouseY);
   }
 }
 
-function handlePointerMove(e) {
-  e.preventDefault();
-
-  currentPressure = e.pressure || 0.5;
-
-  if (freeRotate && e.buttons > 0) {
-    let difx = e.movementX || 0;
-    let dify = e.movementY || 0;
+function mouseDragged() {
+  if (freeRotate) {
+    let difx = mouseX - pmouseX;
+    let dify = mouseY - pmouseY;
     uy -= difx * 0.005;
     ux -= dify * 0.005;
     return;
   }
 
   if (isDrawing && trazoActual && drawMode) {
-    let pos = getCanvasXY(e);
-    trazoActual.addPoint(pos.x, pos.y, 0, currentPressure);
+    let x = mouseX - width / 2;
+    let y = mouseY - height / 2;
+    trazoActual.addPoint(x, y, 0, currentPressure);
   }
 }
 
-function handlePointerUp(e) {
-  e.preventDefault();
-
+function mouseReleased() {
   if (isDrawing && trazoActual) {
     if (trazoActual.points.length > 1) {
       trazos.push(trazoActual);
@@ -101,7 +78,6 @@ function handleSelection(sx, sy) {
 // ── Keyboard ──
 
 function keyPressed() {
-  // Don't capture keys when typing in inputs
   if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
 
   // Help overlay: any key closes it if open
