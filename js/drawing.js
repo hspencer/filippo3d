@@ -150,19 +150,19 @@ function drawReferenceCube() {
   line(-fw, -fl, fz, fw, -fl, fz);          // top horizontal —
   line(-fw, -fl * 0.15, fz, fw * 0.6, -fl * 0.15, fz); // middle horizontal
 
-  // Axis color hints on edges
+  // Axis color hints on edges (from origin corner -s,-s,-s)
   strokeWeight(2);
-  // X axis edge (red)
+  // X axis edge (red) — runs along x
   stroke(255, 60, 60, 150);
-  line(s, s, s, s, s, -s);
+  line(-s, s, s, s, s, s);
 
-  // Y axis edge (green)
+  // Y axis edge (green) — runs along y
   stroke(60, 255, 60, 150);
-  line(-s, -s, s, s, -s, s);
+  line(-s, -s, s, -s, s, s);
 
-  // Z axis edge (blue)
+  // Z axis edge (blue) — runs along z
   stroke(60, 60, 255, 150);
-  line(-s, s, s, -s, -s, s);
+  line(-s, s, -s, -s, s, s);
 
   pop();
 }
