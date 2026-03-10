@@ -135,20 +135,21 @@ function drawReferenceCube() {
   vertex(-s, -s,  s);
   endShape(CLOSE);
 
-  // Draw 'F' on front face (z+ face)
-  // The F is drawn as lines on the front face, slightly in front
-  let fz = s + 0.5;
+  // Draw 'F' calada on front face (z+ plane, visible from both sides)
   let fCol = darkMode ? color(255, 255, 255, 200) : color(40, 40, 40, 200);
   stroke(fCol);
   strokeWeight(1.8);
   noFill();
 
-  // F letter: vertical stroke
   let fl = size * 0.3;  // letter half-height
   let fw = size * 0.2;  // letter half-width
-  line(-fw, -fl, fz, -fw, fl, fz);          // vertical |
-  line(-fw, -fl, fz, fw, -fl, fz);          // top horizontal —
-  line(-fw, -fl * 0.15, fz, fw * 0.6, -fl * 0.15, fz); // middle horizontal
+
+  // F on front (z = s) and back of same face (z = s - 0.5)
+  for (let fz of [s + 0.3, s - 0.3]) {
+    line(-fw, -fl, fz, -fw, fl, fz);                      // vertical |
+    line(-fw, -fl, fz, fw, -fl, fz);                      // top —
+    line(-fw, -fl * 0.15, fz, fw * 0.6, -fl * 0.15, fz);  // middle —
+  }
 
   // Axis color hints on edges (from origin corner -s,-s,-s)
   strokeWeight(2);
