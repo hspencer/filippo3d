@@ -33,10 +33,11 @@ function mousePressed() {
   }
 
   if (drawMode) {
-    let x = mouseX - width / 2;
-    let y = mouseY - height / 2;
+    // Screen coords relative to center, compensating for pan
+    let x = (mouseX - width / 2) - panX;
+    let y = (mouseY - height / 2) - panY;
     trazoActual = new Stroke3D(strokeColor, strokeW);
-    trazoActual.addPoint(x - panX, y - panY, -panZ, currentPressure);
+    trazoActual.addPoint(x, y, 0, currentPressure);
     isDrawing = true;
   } else {
     handleSelection(mouseX, mouseY);
@@ -89,13 +90,17 @@ function mouseDragged() {
     let x = mouseX - width / 2;
     let y = mouseY - height / 2;
 
+    // Compensate for pan so drawing is in model space
+    let cx = x - panX;
+    let cy = y - panY;
+
     if (shiftHeld) {
-      // Shift+drag = straight line (replace all points with just first + current)
+      // Shift+drag = straight line (keep first point + current)
       let first = trazoActual.points[0];
       trazoActual.points = [first];
-      trazoActual.addPoint(x - panX, y - panY, -panZ, currentPressure);
+      trazoActual.addPoint(cx, cy, 0, currentPressure);
     } else {
-      trazoActual.addPoint(x - panX, y - panY, -panZ, currentPressure);
+      trazoActual.addPoint(cx, cy, 0, currentPressure);
     }
   }
 }
