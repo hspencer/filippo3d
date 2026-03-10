@@ -10,31 +10,40 @@ class Stroke3D {
 
   addPoint(x, y, z, pressure) {
     // Transform screen coordinates to model space
-    // by applying inverse of current view rotation
-    let p = this._screenToModel(x, y, z);
+    // by applying inverse of current view rotation.
+    // z is always 0 (we draw on the screen plane).
+    let p = this._screenToModel(x, y);
     p.pressure = pressure || 0.5;
     this.points.push(p);
   }
 
-  _screenToModel(x, y, z) {
-    // Inverse rotation: Z → Y → X (reverse order, negative angles)
-    let cx = Math.cos(-ux), sx = Math.sin(-ux);
-    let cy = Math.cos(-uy), sy = Math.sin(-uy);
-    let cz = Math.cos(-uz), sz = Math.sin(-uz);
+  _screenToModel(sx, sy) {
+    // The screen is always z=0 in view space.
+    // p5 applies: rotateX(ux) → rotateY(uy) → rotateZ(uz)
+    // Forward: R = Rz · Ry · Rx
+    // Inverse: R⁻¹ = Rx⁻¹ · Ry⁻¹ · Rz⁻¹
+    // So we apply: inverse Z, then inverse Y, then inverse X.
 
-    // Inverse Z rotation
-    let zx = cz * x + sz * y;
-    let zy = -sz * x + cz * y;
+    let cosX = Math.cos(ux), sinX = Math.sin(ux);
+    let cosY = Math.cos(uy), sinY = Math.sin(uy);
+    let cosZ = Math.cos(uz), sinZ = Math.sin(uz);
 
-    // Inverse Y rotation
-    let yx = cy * zx + sy * z;
-    let yz = -sy * zx + cy * z;
+    // Step 1: Inverse Z rotation (screen → after-Y space)
+    let x1 =  cosZ * sx + sinZ * sy;
+    let y1 = -sinZ * sx + cosZ * sy;
+    let z1 = 0; // screen plane
 
-    // Inverse X rotation
-    let xy = cx * zy + sx * yz;
-    let xz = -sx * zy + cx * yz;
+    // Step 2: Inverse Y rotation
+    let x2 = cosY * x1 - sinY * z1;
+    let y2 = y1;
+    let z2 = sinY * x1 + cosY * z1;
 
-    return createVector(yx, xy, xz);
+    // Step 3: Inverse X rotation
+    let x3 = x2;
+    let y3 =  cosX * y2 + sinX * z2;
+    let z3 = -sinX * y2 + cosX * z2;
+
+    return createVector(x3, y3, z3);
   }
 
   draw(highlight) {
