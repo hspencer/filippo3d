@@ -60,6 +60,27 @@ function drawScene() {
 
   pop();
 
+  // Marquee selection rectangle (drawn in screen space)
+  if (marquee) {
+    push();
+    // Reset to screen coordinates in WEBGL
+    let mx = (marquee.x0 + marquee.x1) / 2 - width / 2;
+    let my = (marquee.y0 + marquee.y1) / 2 - height / 2;
+    let mw = Math.abs(marquee.x1 - marquee.x0);
+    let mh = Math.abs(marquee.y1 - marquee.y0);
+
+    noFill();
+    stroke(0, 210, 255, 180);
+    strokeWeight(1);
+    rect(mx - mw / 2, my - mh / 2, mw, mh);
+
+    // Light fill
+    fill(0, 210, 255, 15);
+    noStroke();
+    rect(mx - mw / 2, my - mh / 2, mw, mh);
+    pop();
+  }
+
   // Reference cube (top-left corner, after main scene)
   drawReferenceCube();
 }

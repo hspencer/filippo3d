@@ -40,7 +40,8 @@ function mousePressed() {
     trazoActual.addPoint(x, y, 0, currentPressure);
     isDrawing = true;
   } else {
-    handleSelection(mouseX, mouseY);
+    // Start marquee selection
+    marquee = { x0: mouseX, y0: mouseY, x1: mouseX, y1: mouseY };
   }
 }
 
@@ -117,6 +118,12 @@ function mouseDragged() {
       trazoActual.addPoint(x, y, 0, currentPressure);
     }
   }
+
+  // ── Marquee ──
+  if (marquee && !drawMode) {
+    marquee.x1 = mouseX;
+    marquee.y1 = mouseY;
+  }
 }
 
 function mouseReleased() {
@@ -133,14 +140,52 @@ function mouseReleased() {
     isDrawing = false;
     updateStatus();
   }
+
+  // ── Resolve marquee selection ──
+  if (marquee && !drawMode) {
+    let mx0 = Math.min(marquee.x0, marquee.x1);
+    let my0 = Math.min(marquee.y0, marquee.y1);
+    let mx1 = Math.max(marquee.x0, marquee.x1);
+    let my1 = Math.max(marquee.y0, marquee.y1);
+    let isClick = (mx1 - mx0 < 4 && my1 - my0 < 4);
+
+    if (isClick) {
+      // Single click: select one stroke
+      handleClickSelection(marquee.x0, marquee.y0);
+    } else {
+      // Marquee: select all strokes with any point inside the rectangle
+      if (!shiftHeld) {
+        // Without Shift: replace selection
+        trazos.forEach(t => t.selected = false);
+      }
+      for (let t of trazos) {
+        if (t.hitTestRect(mx0, my0, mx1, my1)) {
+          t.selected = true;
+        }
+      }
+    }
+    marquee = null;
+  }
 }
 
-function handleSelection(sx, sy) {
+function handleClickSelection(sx, sy) {
+  // Without Shift: deselect all first, then select the clicked one
+  // With Shift: toggle the clicked one, keep rest
+  let hit = null;
   for (let i = trazos.length - 1; i >= 0; i--) {
     if (trazos[i].hitTest(sx, sy, 15)) {
-      trazos[i].selected = !trazos[i].selected;
-      return;
+      hit = trazos[i];
+      break;
     }
+  }
+
+  if (shiftHeld) {
+    // Shift+click: toggle this stroke
+    if (hit) hit.selected = !hit.selected;
+  } else {
+    // Click: select only this stroke
+    trazos.forEach(t => t.selected = false);
+    if (hit) hit.selected = true;
   }
 }
 

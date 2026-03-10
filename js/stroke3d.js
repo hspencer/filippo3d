@@ -185,4 +185,15 @@ class Stroke3D {
     }
     return false;
   }
+
+  // Check if any point of this stroke falls inside a screen rectangle
+  hitTestRect(x0, y0, x1, y1) {
+    for (let p of this.points) {
+      let sp = this._modelToScreen(p);
+      if (sp.x >= x0 && sp.x <= x1 && sp.y >= y0 && sp.y <= y1) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
