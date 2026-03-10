@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Filippo 3D</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+</head>
+<body>
+  <div id="panel" class="panel">
+    <button id="panel-toggle" class="panel-toggle" title="Toggle panel (Tab)">&#9776;</button>
+    <div class="panel-content">
+      <h1>Filippo <span class="accent">3D</span></h1>
+
+      <div class="section">
+        <label>Color</label>
+        <input type="color" id="stroke-color" value="#ffffff">
+      </div>
+
+      <div class="section">
+        <label>Grosor <span id="weight-val">2</span></label>
+        <input type="range" id="stroke-weight" min="1" max="20" value="2" step="0.5">
+      </div>
+
+      <div class="section">
+        <label>Modo</label>
+        <div class="btn-group">
+          <button id="btn-draw" class="btn active" title="Dibujo libre">Dibujo</button>
+          <button id="btn-select" class="btn" title="Seleccionar trazos">Selección</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <label>Vista</label>
+        <div class="cube-nav" id="cube-nav">
+          <button data-view="front" class="cube-face active" title="Front (F)">F</button>
+          <button data-view="top" class="cube-face" title="Top (T)">T</button>
+          <button data-view="left" class="cube-face" title="Left (L)">L</button>
+          <button data-view="right" class="cube-face" title="Right (R)">R</button>
+          <button data-view="back" class="cube-face" title="Back (K)">K</button>
+          <button data-view="bottom" class="cube-face" title="Bottom (B)">B</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <label>Fondo</label>
+        <div class="btn-group">
+          <button id="btn-dark" class="btn active">Oscuro</button>
+          <button id="btn-light" class="btn">Claro</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <label>Acciones</label>
+        <div class="btn-group">
+          <button id="btn-undo" class="btn" title="Deshacer (Z)">↩ Undo</button>
+          <button id="btn-clear" class="btn" title="Limpiar todo">✕ Clear</button>
+          <button id="btn-export" class="btn" title="Exportar PNG (S)">⬇ PNG</button>
+        </div>
+      </div>
+
+      <div class="section info">
+        <div id="status">Trazos: 0</div>
+      </div>
+
+      <div class="section shortcuts">
+        <h2>Atajos</h2>
+        <ul>
+          <li><kbd>Tab</kbd> Panel</li>
+          <li><kbd>Space</kbd> Rotar libre</li>
+          <li><kbd>F T L R K B</kbd> Vistas</li>
+          <li><kbd>Z</kbd> Undo</li>
+          <li><kbd>S</kbd> Exportar PNG</li>
+          <li><kbd>M</kbd> Fondo</li>
+          <li><kbd>, .</kbd> Grosor −/+</li>
+          <li><kbd>E</kbd> Borrar selección</li>
+          <li><kbd>N</kbd> Nuevo</li>
+          <li><kbd>?</kbd> Ayuda</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help overlay -->
+  <div id="help-overlay" class="help-overlay hidden">
+    <div class="help-card">
+      <h2>Filippo 3D — Atajos de teclado</h2>
+      <div class="help-columns">
+        <div>
+          <h3>Dibujo</h3>
+          <dl>
+            <dt><kbd>,</kbd> <kbd>.</kbd></dt><dd>Grosor −/+</dd>
+            <dt><kbd>Z</kbd></dt><dd>Deshacer</dd>
+            <dt><kbd>E</kbd></dt><dd>Borrar selección</dd>
+            <dt><kbd>N</kbd></dt><dd>Nuevo (limpiar todo)</dd>
+          </dl>
+        </div>
+        <div>
+          <h3>Vista 3D</h3>
+          <dl>
+            <dt><kbd>Space</kbd></dt><dd>Rotación libre (arrastrar)</dd>
+            <dt><kbd>F</kbd></dt><dd>Front</dd>
+            <dt><kbd>T</kbd></dt><dd>Top</dd>
+            <dt><kbd>B</kbd></dt><dd>Bottom</dd>
+            <dt><kbd>L</kbd></dt><dd>Left</dd>
+            <dt><kbd>R</kbd></dt><dd>Right</dd>
+            <dt><kbd>K</kbd></dt><dd>Back</dd>
+          </dl>
+        </div>
+        <div>
+          <h3>General</h3>
+          <dl>
+            <dt><kbd>Tab</kbd></dt><dd>Mostrar/ocultar panel</dd>
+            <dt><kbd>M</kbd></dt><dd>Tema oscuro/claro</dd>
+            <dt><kbd>S</kbd></dt><dd>Exportar PNG</dd>
+            <dt><kbd>?</kbd></dt><dd>Esta ayuda</dd>
+          </dl>
+        </div>
+      </div>
+      <p class="help-dismiss">Presiona cualquier tecla para cerrar</p>
+    </div>
+  </div>
+
+  <canvas id="defaultCanvas0"></canvas>
+
+  <script src="js/variables.js"></script>
+  <script src="js/stroke3d.js"></script>
+  <script src="js/drawing.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/sketch.js"></script>
+</body>
+</html>
