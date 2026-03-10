@@ -30,6 +30,9 @@ function drawScene() {
 
   push();
 
+  // Apply pan (translation in screen space, before rotation)
+  translate(panX, panY, panZ);
+
   // Apply view rotation
   rotateX(ux);
   rotateY(uy);

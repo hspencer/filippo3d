@@ -1,6 +1,6 @@
 // Filippo 3D - Input handling
 
-// ── Pointer Events (only for pressure + pointer type) ──
+// ── Pointer Events (for stylus pressure data) ──
 
 function setupPointerEvents() {
   setTimeout(() => {
@@ -18,7 +18,7 @@ function setupPointerEvents() {
   }, 100);
 }
 
-// ── p5.js mouse handlers (reliable cross-browser drawing) ──
+// ── p5.js mouse handlers ──
 
 function mousePressed() {
   // Ignore clicks on UI panel
@@ -26,13 +26,17 @@ function mousePressed() {
     return;
   }
 
-  if (freeRotate) return;
+  // Modifier modes: don't start drawing
+  if (spaceHeld || axisHeld) {
+    interacting = true;
+    return;
+  }
 
   if (drawMode) {
     let x = mouseX - width / 2;
     let y = mouseY - height / 2;
     trazoActual = new Stroke3D(strokeColor, strokeW);
-    trazoActual.addPoint(x, y, 0, currentPressure);
+    trazoActual.addPoint(x - panX, y - panY, -panZ, currentPressure);
     isDrawing = true;
   } else {
     handleSelection(mouseX, mouseY);
@@ -40,22 +44,68 @@ function mousePressed() {
 }
 
 function mouseDragged() {
-  if (freeRotate) {
-    let difx = mouseX - pmouseX;
-    let dify = mouseY - pmouseY;
-    uy -= difx * 0.005;
-    ux -= dify * 0.005;
+  let dx = mouseX - pmouseX;
+  let dy = mouseY - pmouseY;
+
+  // ── Space held: pan or rotate ──
+  if (spaceHeld) {
+    if (shiftHeld) {
+      // Shift+Space+drag = free 3D rotation
+      uy -= dx * 0.005;
+      ux -= dy * 0.005;
+      currentView = null;
+      updateViewButtons();
+    } else {
+      // Space+drag = pan (move origin)
+      panX += dx;
+      panY += dy;
+    }
     return;
   }
 
+  // ── Axis key held + drag: rotate or translate along axis ──
+  if (axisHeld) {
+    let amount = dx * 0.005;       // horizontal drag = amount
+    let panAmount = dx;            // pixel-based for translation
+
+    if (shiftHeld) {
+      // Shift+axis+drag = translate along axis
+      if (axisHeld === 'x') panX += panAmount;
+      if (axisHeld === 'y') panY += panAmount;
+      if (axisHeld === 'z') panZ += panAmount;
+    } else {
+      // axis+drag = rotate around axis
+      if (axisHeld === 'x') ux += amount;
+      if (axisHeld === 'y') uy += amount;
+      if (axisHeld === 'z') uz += amount;
+      currentView = null;
+      updateViewButtons();
+    }
+    return;
+  }
+
+  // ── Drawing ──
   if (isDrawing && trazoActual && drawMode) {
     let x = mouseX - width / 2;
     let y = mouseY - height / 2;
-    trazoActual.addPoint(x, y, 0, currentPressure);
+
+    if (shiftHeld) {
+      // Shift+drag = straight line (replace all points with just first + current)
+      let first = trazoActual.points[0];
+      trazoActual.points = [first];
+      trazoActual.addPoint(x - panX, y - panY, -panZ, currentPressure);
+    } else {
+      trazoActual.addPoint(x - panX, y - panY, -panZ, currentPressure);
+    }
   }
 }
 
 function mouseReleased() {
+  if (interacting) {
+    interacting = false;
+    return;
+  }
+
   if (isDrawing && trazoActual) {
     if (trazoActual.points.length > 1) {
       trazos.push(trazoActual);
@@ -80,41 +130,53 @@ function handleSelection(sx, sy) {
 function keyPressed() {
   if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
 
-  // Help overlay: any key closes it if open
+  // Track modifier keys
+  if (keyCode === SHIFT) {
+    shiftHeld = true;
+    return;
+  }
+
+  // Track space (pan mode)
+  if (key === ' ') {
+    spaceHeld = true;
+    if (shiftHeld) {
+      cursor('grab');
+    } else {
+      cursor('move');
+    }
+    return false; // prevent scroll
+  }
+
+  // Track axis keys (only when not drawing)
+  if (!isDrawing && (key === 'x' || key === 'y' || key === 'z')) {
+    axisHeld = key;
+    cursor('ew-resize');
+    return;
+  }
+
+  // Help overlay
   let helpEl = document.getElementById('help-overlay');
   if (helpEl && !helpEl.classList.contains('hidden')) {
     helpEl.classList.add('hidden');
     return false;
   }
 
+  // Cmd/Ctrl combinations
+  if (keyIsDown(91) || keyIsDown(93) || keyIsDown(17)) { // meta or ctrl
+    if (key === 'z' || key === 'Z') {
+      undo();
+      return false;
+    }
+    if (key === 's' || key === 'S') {
+      exportPNG();
+      return false;
+    }
+  }
+
   switch (key) {
     case '?':
       if (helpEl) helpEl.classList.toggle('hidden');
       return false;
-
-    case ' ':
-      toggleFreeRotate();
-      return false;
-
-    case 'z':
-    case 'Z':
-      undo();
-      break;
-
-    case 's':
-    case 'S':
-      exportPNG();
-      break;
-
-    case 'n':
-    case 'N':
-      newDrawing();
-      break;
-
-    case 'm':
-    case 'M':
-      toggleTheme();
-      break;
 
     case ',':
       strokeW = max(0.5, strokeW - 0.5);
@@ -127,27 +189,43 @@ function keyPressed() {
       break;
 
     case 'f':
+    case 'F':
       setView('front');
       break;
     case 't':
+    case 'T':
       setView('top');
       break;
     case 'l':
+    case 'L':
       setView('left');
       break;
     case 'r':
+    case 'R':
       setView('right');
       break;
     case 'k':
+    case 'K':
       setView('back');
       break;
     case 'b':
+    case 'B':
       setView('bottom');
       break;
 
     case 'e':
     case 'E':
       eraseSelected();
+      break;
+
+    case 'm':
+    case 'M':
+      toggleTheme();
+      break;
+
+    case 'n':
+    case 'N':
+      newDrawing();
       break;
   }
 
@@ -157,18 +235,19 @@ function keyPressed() {
   }
 }
 
-// ── Free rotate ──
-
-function toggleFreeRotate() {
-  freeRotate = !freeRotate;
-  if (freeRotate) {
-    currentView = null;
-    updateViewButtons();
-    showRotateIndicator();
-    cursor('grab');
-  } else {
-    removeRotateIndicator();
+function keyReleased() {
+  if (keyCode === SHIFT) {
+    shiftHeld = false;
+  }
+  if (key === ' ') {
+    spaceHeld = false;
     cursor(CROSS);
+  }
+  if (key === 'x' || key === 'y' || key === 'z') {
+    if (axisHeld === key) {
+      axisHeld = null;
+      cursor(CROSS);
+    }
   }
 }
 
@@ -192,9 +271,8 @@ function newDrawing() {
   isDrawing = false;
   ux = 0; uy = 0; uz = 0;
   nx = 0; ny = 0; nz = 0;
-  freeRotate = false;
+  panX = 0; panY = 0; panZ = 0;
   currentView = 'front';
-  removeRotateIndicator();
   cursor(CROSS);
   updateViewButtons();
   updateStatus();
@@ -221,13 +299,12 @@ function toggleTheme() {
 
 // ── Rotate indicator ──
 
-function showRotateIndicator() {
-  if (!document.querySelector('.rotate-indicator')) {
-    let div = document.createElement('div');
-    div.className = 'rotate-indicator';
-    div.textContent = 'Rotación libre — Space para fijar vista';
-    document.body.appendChild(div);
-  }
+function showRotateIndicator(text) {
+  removeRotateIndicator();
+  let div = document.createElement('div');
+  div.className = 'rotate-indicator';
+  div.textContent = text;
+  document.body.appendChild(div);
 }
 
 function removeRotateIndicator() {

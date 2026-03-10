@@ -5,16 +5,24 @@ let ux = 0, uy = 0, uz = 0;
 // Rotation angles (target for animated transitions)
 let nx = 0, ny = 0, nz = 0;
 
+// Pan offset (model translation)
+let panX = 0, panY = 0, panZ = 0;
+
 // Strokes
 let trazos = [];
 let trazoActual = null;
 let isDrawing = false;
 
-// Modes
+// Interaction modes
 let drawMode = true;       // true = draw, false = select
-let freeRotate = false;
 let darkMode = true;
 let animatingView = false;
+
+// Modifier-driven modes (active while key held)
+let spaceHeld = false;     // pan mode
+let shiftHeld = false;     // straight line / modifier
+let axisHeld = null;       // 'x', 'y', or 'z' for axis-constrained ops
+let interacting = false;   // true while dragging in a modifier mode
 
 // Stylus / pointer
 let currentPressure = 0.5;
