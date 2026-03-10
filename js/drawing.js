@@ -52,6 +52,119 @@ function drawScene() {
   }
 
   pop();
+
+  // Reference cube (top-left corner, after main scene)
+  drawReferenceCube();
+}
+
+function drawReferenceCube() {
+  let size = 32;
+  // Position: top-left, offset from edge (account for panel)
+  let panelOffset = document.getElementById('panel').classList.contains('collapsed') ? 0 : 220;
+  let cx = -width / 2 + panelOffset + 50;
+  let cy = -height / 2 + 55;
+
+  push();
+  translate(cx, cy, 0);
+  rotateX(ux);
+  rotateY(uy);
+  rotateZ(uz);
+
+  // Cube faces - semi-transparent
+  let faceAlpha = darkMode ? 30 : 20;
+  let edgeAlpha = darkMode ? 80 : 100;
+  let edgeCol = darkMode ? 255 : 60;
+
+  strokeWeight(0.8);
+  stroke(edgeCol, edgeAlpha);
+
+  // Draw each face manually for control
+  let s = size / 2;
+
+  // Front face (z+) — the F face, slightly highlighted
+  fill(231, 76, 60, faceAlpha + 25);
+  beginShape();
+  vertex(-s, -s, s);
+  vertex( s, -s, s);
+  vertex( s,  s, s);
+  vertex(-s,  s, s);
+  endShape(CLOSE);
+
+  // Back face (z-)
+  fill(edgeCol, faceAlpha);
+  beginShape();
+  vertex(-s, -s, -s);
+  vertex( s, -s, -s);
+  vertex( s,  s, -s);
+  vertex(-s,  s, -s);
+  endShape(CLOSE);
+
+  // Top face (y-)
+  fill(edgeCol, faceAlpha);
+  beginShape();
+  vertex(-s, -s, -s);
+  vertex( s, -s, -s);
+  vertex( s, -s,  s);
+  vertex(-s, -s,  s);
+  endShape(CLOSE);
+
+  // Bottom face (y+)
+  fill(edgeCol, faceAlpha);
+  beginShape();
+  vertex(-s, s, -s);
+  vertex( s, s, -s);
+  vertex( s, s,  s);
+  vertex(-s, s,  s);
+  endShape(CLOSE);
+
+  // Right face (x+)
+  fill(edgeCol, faceAlpha);
+  beginShape();
+  vertex(s, -s, -s);
+  vertex(s,  s, -s);
+  vertex(s,  s,  s);
+  vertex(s, -s,  s);
+  endShape(CLOSE);
+
+  // Left face (x-)
+  fill(edgeCol, faceAlpha);
+  beginShape();
+  vertex(-s, -s, -s);
+  vertex(-s,  s, -s);
+  vertex(-s,  s,  s);
+  vertex(-s, -s,  s);
+  endShape(CLOSE);
+
+  // Draw 'F' on front face (z+ face)
+  // The F is drawn as lines on the front face, slightly in front
+  let fz = s + 0.5;
+  let fCol = darkMode ? color(255, 255, 255, 200) : color(40, 40, 40, 200);
+  stroke(fCol);
+  strokeWeight(1.8);
+  noFill();
+
+  // F letter: vertical stroke
+  let fl = size * 0.3;  // letter half-height
+  let fw = size * 0.2;  // letter half-width
+  line(-fw, -fl, fz, -fw, fl, fz);          // vertical |
+  line(-fw, -fl, fz, fw, -fl, fz);          // top horizontal —
+  line(-fw, -fl * 0.15, fz, fw * 0.6, -fl * 0.15, fz); // middle horizontal
+
+  // Axis color hints on edges
+  strokeWeight(2);
+  // X axis edge (red)
+  stroke(255, 60, 60, 150);
+  line(s, s, s, s, s, -s);
+
+  // Y axis edge (green)
+  stroke(60, 255, 60, 150);
+  line(-s, -s, s, s, -s, s);
+
+  // Z axis edge (blue)
+  stroke(60, 60, 255, 150);
+  line(-s, s, s, -s, -s, s);
+
+  pop();
 }
 
 function drawAxis() {
