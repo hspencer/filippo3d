@@ -1,4 +1,10 @@
 // Filippo 3D - Stroke3D class
+//
+// Rotation convention (p5.js WEBGL):
+//   rotateX(ux); rotateY(uy); rotateZ(uz);
+//   M = Rx * Ry * Rz  (vertex is transformed as Rx(Ry(Rz(v))))
+//   Forward:  apply Rz first, then Ry, then Rx
+//   Inverse:  apply Rx⁻¹ first, then Ry⁻¹, then Rz⁻¹
 
 class Stroke3D {
   constructor(col, weight) {
@@ -9,23 +15,16 @@ class Stroke3D {
   }
 
   addPoint(x, y, z, pressure) {
-    // Transform screen coordinates to model space
-    // by applying inverse of current view rotation.
-    // z is always 0 (we draw on the screen plane).
     let p = this._screenToModel(x, y);
     p.pressure = pressure || 0.5;
     this.points.push(p);
   }
 
   _screenToModel(sx, sy) {
-    // With orthographic projection, the relationship is:
-    //   screen = R * model + pan
-    // To invert (drawing on the screen plane):
-    //   view = (sx - panX, sy - panY, -panZ)
-    //   model = R⁻¹ * view
-    //
-    // R = Rx(ux) * Ry(uy) * Rz(uz)  (p5 applies in this order)
-    // R⁻¹ = Rz(-uz) * Ry(-uy) * Rx(-ux)
+    // With ortho: screen = R * model + pan
+    // Inverse:    model = R⁻¹ * (screen - pan)
+    // R⁻¹ = Rz⁻¹ * Ry⁻¹ * Rx⁻¹
+    // Applied step by step: first Rx⁻¹, then Ry⁻¹, then Rz⁻¹
 
     let vx = sx - panX;
     let vy = sy - panY;
@@ -35,22 +34,51 @@ class Stroke3D {
     let cosY = Math.cos(uy), sinY = Math.sin(uy);
     let cosZ = Math.cos(uz), sinZ = Math.sin(uz);
 
-    // Step 1: Inverse Z rotation
-    let x1 =  cosZ * vx + sinZ * vy;
-    let y1 = -sinZ * vx + cosZ * vy;
-    let z1 = vz;
+    // Step 1: Rx⁻¹ (inverse X rotation)
+    let x1 = vx;
+    let y1 =  cosX * vy + sinX * vz;
+    let z1 = -sinX * vy + cosX * vz;
 
-    // Step 2: Inverse Y rotation
+    // Step 2: Ry⁻¹ (inverse Y rotation)
     let x2 =  cosY * x1 - sinY * z1;
     let y2 = y1;
     let z2 =  sinY * x1 + cosY * z1;
 
-    // Step 3: Inverse X rotation
-    let x3 = x2;
-    let y3 =  cosX * y2 + sinX * z2;
-    let z3 = -sinX * y2 + cosX * z2;
+    // Step 3: Rz⁻¹ (inverse Z rotation)
+    let x3 =  cosZ * x2 + sinZ * y2;
+    let y3 = -sinZ * x2 + cosZ * y2;
+    let z3 = z2;
 
     return createVector(x3, y3, z3);
+  }
+
+  _modelToScreen(p) {
+    // Forward: screen = R * model + pan
+    // R = Rx * Ry * Rz → apply Rz first, then Ry, then Rx
+
+    let cosX = Math.cos(ux), sinX = Math.sin(ux);
+    let cosY = Math.cos(uy), sinY = Math.sin(uy);
+    let cosZ = Math.cos(uz), sinZ = Math.sin(uz);
+
+    // Step 1: Rz
+    let x1 = cosZ * p.x - sinZ * p.y;
+    let y1 = sinZ * p.x + cosZ * p.y;
+    let z1 = p.z;
+
+    // Step 2: Ry
+    let x2 =  cosY * x1 + sinY * z1;
+    let y2 = y1;
+    let z2 = -sinY * x1 + cosY * z1;
+
+    // Step 3: Rx
+    let x3 = x2;
+    let y3 = cosX * y2 - sinX * z2;
+    let z3 = sinX * y2 + cosX * z2;
+
+    return {
+      x: x3 + panX + width / 2,
+      y: y3 + panY + height / 2
+    };
   }
 
   draw(highlight) {
@@ -65,11 +93,9 @@ class Stroke3D {
 
     noFill();
 
-    // Draw with variable weight if pressure data exists
     let usePressure = this.points.some(p => p.pressure !== undefined && p.pressure !== 0.5);
 
     if (usePressure) {
-      // Segment-based drawing for variable width
       for (let i = 0; i < this.points.length - 1; i++) {
         let p0 = this.points[i];
         let p1 = this.points[i + 1];
@@ -81,16 +107,13 @@ class Stroke3D {
         endShape();
       }
     } else {
-      // Smooth curve for uniform width
       strokeWeight(this.weight);
       beginShape();
-      // Double first point for curveVertex
       let first = this.points[0];
       curveVertex(first.x, first.y, first.z);
       for (let p of this.points) {
         curveVertex(p.x, p.y, p.z);
       }
-      // Double last point
       let last = this.points[this.points.length - 1];
       curveVertex(last.x, last.y, last.z);
       endShape();
@@ -99,7 +122,6 @@ class Stroke3D {
 
   // ── Transformations (operate on model-space points) ──
 
-  // Translate all points by dx, dy, dz in model space
   translate(dx, dy, dz) {
     for (let p of this.points) {
       p.x += dx;
@@ -108,7 +130,6 @@ class Stroke3D {
     }
   }
 
-  // Rotate all points around an axis by angle (radians), relative to centroid
   rotateAroundAxis(axis, angle) {
     let c = this._centroid();
     let cos = Math.cos(angle), sin = Math.sin(angle);
@@ -125,7 +146,7 @@ class Stroke3D {
         nx = cos * x + sin * z;
         ny = y;
         nz = -sin * x + cos * z;
-      } else { // z
+      } else {
         nx = cos * x - sin * y;
         ny = sin * x + cos * y;
         nz = z;
@@ -137,7 +158,6 @@ class Stroke3D {
     }
   }
 
-  // Scale all points along an axis, relative to centroid
   scaleAxis(axis, factor) {
     let c = this._centroid();
     for (let p of this.points) {
@@ -147,7 +167,6 @@ class Stroke3D {
     }
   }
 
-  // Centroid of all points
   _centroid() {
     let sx = 0, sy = 0, sz = 0;
     for (let p of this.points) {
@@ -157,31 +176,6 @@ class Stroke3D {
     return { x: sx / n, y: sy / n, z: sz / n };
   }
 
-  // Project a model-space point to screen using current rotation + pan
-  _modelToScreen(p) {
-    let cx = Math.cos(ux), sx2 = Math.sin(ux);
-    let cy = Math.cos(uy), sy = Math.sin(uy);
-    let cz = Math.cos(uz), sz = Math.sin(uz);
-
-    // Apply X rotation
-    let xy = cx * p.y - sx2 * p.z;
-    let xz = sx2 * p.y + cx * p.z;
-
-    // Apply Y rotation
-    let yx = cy * p.x + sy * xz;
-    let yz = -sy * p.x + cy * xz;
-
-    // Apply Z rotation
-    let zx = cz * yx - sz * xy;
-    let zy = sz * yx + cz * xy;
-
-    return {
-      x: zx + panX + width / 2,
-      y: zy + panY + height / 2
-    };
-  }
-
-  // Check if a screen point is near this stroke
   hitTest(sx, sy, threshold) {
     threshold = threshold || 12;
     for (let p of this.points) {

@@ -347,22 +347,26 @@ function applyToSelected(fn) {
 }
 
 // Convert a screen-space delta (dx, dy pixels) to model-space delta
+// Same R⁻¹ as _screenToModel: Rx⁻¹ first, then Ry⁻¹, then Rz⁻¹
 function screenDeltaToModel(dx, dy) {
   let cosX = Math.cos(ux), sinX = Math.sin(ux);
   let cosY = Math.cos(uy), sinY = Math.sin(uy);
   let cosZ = Math.cos(uz), sinZ = Math.sin(uz);
 
-  // Same inverse rotation as _screenToModel but for a delta (no z)
-  let x1 =  cosZ * dx + sinZ * dy;
-  let y1 = -sinZ * dx + cosZ * dy;
+  // Step 1: Rx⁻¹
+  let x1 = dx;
+  let y1 =  cosX * dy;
+  let z1 = -sinX * dy;
 
-  let x2 = cosY * x1;
+  // Step 2: Ry⁻¹
+  let x2 =  cosY * x1 - sinY * z1;
   let y2 = y1;
-  let z2 = sinY * x1;
+  let z2 =  sinY * x1 + cosY * z1;
 
-  let x3 = x2;
-  let y3 =  cosX * y2 + sinX * z2;
-  let z3 = -sinX * y2 + cosX * z2;
+  // Step 3: Rz⁻¹
+  let x3 =  cosZ * x2 + sinZ * y2;
+  let y3 = -sinZ * x2 + cosZ * y2;
+  let z3 = z2;
 
   return { x: x3, y: y3, z: z3 };
 }
@@ -371,5 +375,4 @@ function screenDeltaToModel(dx, dy) {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  ortho(-width / 2, width / 2, -height / 2, height / 2, -10000, 10000);
 }
