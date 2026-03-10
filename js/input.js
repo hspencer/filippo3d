@@ -33,9 +33,9 @@ function mousePressed() {
   }
 
   if (drawMode) {
-    // Screen coords relative to center, compensating for pan
-    let x = (mouseX - width / 2) - panX;
-    let y = (mouseY - height / 2) - panY;
+    // Screen coords relative to center (pan is handled inside _screenToModel)
+    let x = mouseX - width / 2;
+    let y = mouseY - height / 2;
     trazoActual = new Stroke3D(strokeColor, strokeW);
     trazoActual.addPoint(x, y, 0, currentPressure);
     isDrawing = true;
@@ -108,17 +108,13 @@ function mouseDragged() {
     let x = mouseX - width / 2;
     let y = mouseY - height / 2;
 
-    // Compensate for pan so drawing is in model space
-    let cx = x - panX;
-    let cy = y - panY;
-
     if (shiftHeld) {
       // Shift+drag = straight line (keep first point + current)
       let first = trazoActual.points[0];
       trazoActual.points = [first];
-      trazoActual.addPoint(cx, cy, 0, currentPressure);
+      trazoActual.addPoint(x, y, 0, currentPressure);
     } else {
-      trazoActual.addPoint(cx, cy, 0, currentPressure);
+      trazoActual.addPoint(x, y, 0, currentPressure);
     }
   }
 }
@@ -375,4 +371,5 @@ function screenDeltaToModel(dx, dy) {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  ortho(-width / 2, width / 2, -height / 2, height / 2, -10000, 10000);
 }

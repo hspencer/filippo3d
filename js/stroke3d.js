@@ -18,25 +18,32 @@ class Stroke3D {
   }
 
   _screenToModel(sx, sy) {
-    // The screen is always z=0 in view space.
-    // p5 applies: rotateX(ux) → rotateY(uy) → rotateZ(uz)
-    // Forward: R = Rz · Ry · Rx
-    // Inverse: R⁻¹ = Rx⁻¹ · Ry⁻¹ · Rz⁻¹
-    // So we apply: inverse Z, then inverse Y, then inverse X.
+    // With orthographic projection, the relationship is:
+    //   screen = R * model + pan
+    // To invert (drawing on the screen plane):
+    //   view = (sx - panX, sy - panY, -panZ)
+    //   model = R⁻¹ * view
+    //
+    // R = Rx(ux) * Ry(uy) * Rz(uz)  (p5 applies in this order)
+    // R⁻¹ = Rz(-uz) * Ry(-uy) * Rx(-ux)
+
+    let vx = sx - panX;
+    let vy = sy - panY;
+    let vz = -panZ;
 
     let cosX = Math.cos(ux), sinX = Math.sin(ux);
     let cosY = Math.cos(uy), sinY = Math.sin(uy);
     let cosZ = Math.cos(uz), sinZ = Math.sin(uz);
 
-    // Step 1: Inverse Z rotation (screen → after-Y space)
-    let x1 =  cosZ * sx + sinZ * sy;
-    let y1 = -sinZ * sx + cosZ * sy;
-    let z1 = 0; // screen plane
+    // Step 1: Inverse Z rotation
+    let x1 =  cosZ * vx + sinZ * vy;
+    let y1 = -sinZ * vx + cosZ * vy;
+    let z1 = vz;
 
     // Step 2: Inverse Y rotation
-    let x2 = cosY * x1 - sinY * z1;
+    let x2 =  cosY * x1 - sinY * z1;
     let y2 = y1;
-    let z2 = sinY * x1 + cosY * z1;
+    let z2 =  sinY * x1 + cosY * z1;
 
     // Step 3: Inverse X rotation
     let x3 = x2;

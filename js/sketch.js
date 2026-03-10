@@ -2,6 +2,9 @@
 
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
+  // Orthographic projection: no perspective distortion.
+  // Screen coords map directly to view coords.
+  ortho(-width / 2, width / 2, -height / 2, height / 2, -10000, 10000);
   cursor(CROSS);
   smooth();
 
