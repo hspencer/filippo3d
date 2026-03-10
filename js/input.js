@@ -1,35 +1,51 @@
 // Filippo 3D - Input handling
+// Uses Pointer Events API for unified mouse/touch/stylus support
 
-// ── Pointer Events (for stylus pressure data) ──
+// Internal pointer tracking
+let _px = 0, _py = 0;   // current pointer position (screen pixels)
+let _ppx = 0, _ppy = 0; // previous pointer position
+
+// ── Pointer Events (all drawing/interaction input) ──
 
 function setupPointerEvents() {
   setTimeout(() => {
     let canvas = document.querySelector('canvas');
     if (!canvas) return;
+
     canvas.style.touchAction = 'none';
-    canvas.addEventListener('pointerdown', e => {
-      currentPressure = e.pressure || 0.5;
-      pointerType = e.pointerType || 'mouse';
-    });
-    canvas.addEventListener('pointermove', e => {
-      currentPressure = e.pressure || 0.5;
-    });
+
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup', onPointerUp);
+    canvas.addEventListener('pointercancel', onPointerUp);
     canvas.addEventListener('contextmenu', e => e.preventDefault());
   }, 100);
 }
 
-// ── p5.js mouse handlers ──
+function getPos(e) {
+  let canvas = document.querySelector('canvas');
+  let rect = canvas.getBoundingClientRect();
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
+}
 
-function mousePressed() {
+function onPointerDown(e) {
+  e.preventDefault();
+  let pos = getPos(e);
+  _px = pos.x; _py = pos.y;
+  _ppx = pos.x; _ppy = pos.y;
+  currentPressure = e.pressure || 0.5;
+  pointerType = e.pointerType || 'mouse';
+
   // Ignore clicks on UI panel
-  if (mouseX < 220 && !document.getElementById('panel').classList.contains('collapsed')) {
-    return;
-  }
+  let panelOpen = !document.getElementById('panel').classList.contains('collapsed');
+  if (panelOpen && pos.x < 220) return;
 
   // Modifier modes: don't start drawing, but snapshot for undo
   if (spaceHeld || axisHeld) {
     interacting = true;
-    // Snapshot selected strokes before transform
     let selected = trazos.filter(t => t.selected);
     if (!drawMode && selected.length > 0) {
       transformSnapshot = snapshotStrokes(selected);
@@ -38,39 +54,42 @@ function mousePressed() {
   }
 
   if (drawMode) {
-    // Screen coords relative to center (pan is handled inside _screenToModel)
-    let x = mouseX - width / 2;
-    let y = mouseY - height / 2;
+    let x = pos.x - width / 2;
+    let y = pos.y - height / 2;
     trazoActual = new Stroke3D(strokeColor, strokeW);
     trazoActual.addPoint(x, y, 0, currentPressure);
     isDrawing = true;
   } else {
-    // Start marquee selection
-    marquee = { x0: mouseX, y0: mouseY, x1: mouseX, y1: mouseY };
+    marquee = { x0: pos.x, y0: pos.y, x1: pos.x, y1: pos.y };
   }
 }
 
-function mouseDragged() {
-  let dx = mouseX - pmouseX;
-  let dy = mouseY - pmouseY;
+function onPointerMove(e) {
+  e.preventDefault();
+  let pos = getPos(e);
+  _ppx = _px; _ppy = _py;
+  _px = pos.x; _py = pos.y;
+  currentPressure = e.pressure || 0.5;
+
+  if (e.buttons === 0) return; // not dragging
+
+  let dx = _px - _ppx;
+  let dy = _py - _ppy;
   let hasSelection = !drawMode && trazos.some(t => t.selected);
 
   // ── Space held: pan/translate ──
   if (spaceHeld) {
     if (hasSelection) {
-      // Select mode: translate selection in screen plane → model space
       applyToSelected(t => {
         let d = screenDeltaToModel(dx, dy);
         t.translate(d.x, d.y, d.z);
       });
     } else if (shiftHeld) {
-      // Shift+Space+drag = free 3D rotation (viewport)
       uy -= dx * 0.005;
       ux -= dy * 0.005;
       currentView = null;
       updateViewButtons();
     } else {
-      // Space+drag = pan viewport
       panX += dx;
       panY += dy;
     }
@@ -84,21 +103,17 @@ function mouseDragged() {
 
     if (hasSelection) {
       if (shiftHeld) {
-        // Select + Shift+axis+drag = scale selection
         let factor = 1 + dx * 0.005;
         applyToSelected(t => t.scaleAxis(axisHeld, factor));
       } else {
-        // Select + axis+drag = rotate selection around axis
         applyToSelected(t => t.rotateAroundAxis(axisHeld, amount));
       }
     } else {
       if (shiftHeld) {
-        // Shift+axis+drag = translate viewport along axis
         if (axisHeld === 'x') panX += panAmount;
         if (axisHeld === 'y') panY += panAmount;
         if (axisHeld === 'z') panZ += panAmount;
       } else {
-        // axis+drag = rotate viewport around axis
         if (axisHeld === 'x') ux += amount;
         if (axisHeld === 'y') uy += amount;
         if (axisHeld === 'z') uz += amount;
@@ -111,11 +126,10 @@ function mouseDragged() {
 
   // ── Drawing ──
   if (isDrawing && trazoActual && drawMode) {
-    let x = mouseX - width / 2;
-    let y = mouseY - height / 2;
+    let x = pos.x - width / 2;
+    let y = pos.y - height / 2;
 
     if (shiftHeld) {
-      // Shift+drag = straight line (keep first point + current)
       let first = trazoActual.points[0];
       trazoActual.points = [first];
       trazoActual.addPoint(x, y, 0, currentPressure);
@@ -126,15 +140,16 @@ function mouseDragged() {
 
   // ── Marquee ──
   if (marquee && !drawMode) {
-    marquee.x1 = mouseX;
-    marquee.y1 = mouseY;
+    marquee.x1 = pos.x;
+    marquee.y1 = pos.y;
   }
 }
 
-function mouseReleased() {
+function onPointerUp(e) {
+  e.preventDefault();
+
   if (interacting) {
     interacting = false;
-    // If we were transforming selected strokes, push undo action
     if (transformSnapshot) {
       pushTransformUndo(transformSnapshot);
       transformSnapshot = null;
@@ -161,12 +176,9 @@ function mouseReleased() {
     let isClick = (mx1 - mx0 < 4 && my1 - my0 < 4);
 
     if (isClick) {
-      // Single click: select one stroke
       handleClickSelection(marquee.x0, marquee.y0);
     } else {
-      // Marquee: select all strokes with any point inside the rectangle
       if (!shiftHeld) {
-        // Without Shift: replace selection
         trazos.forEach(t => t.selected = false);
       }
       for (let t of trazos) {
@@ -179,9 +191,12 @@ function mouseReleased() {
   }
 }
 
+// Disable p5 mouse handlers (we use pointer events)
+function mousePressed()  { return false; }
+function mouseDragged()  { return false; }
+function mouseReleased() { return false; }
+
 function handleClickSelection(sx, sy) {
-  // Without Shift: deselect all first, then select the clicked one
-  // With Shift: toggle the clicked one, keep rest
   let hit = null;
   for (let i = trazos.length - 1; i >= 0; i--) {
     if (trazos[i].hitTest(sx, sy, 15)) {
@@ -191,10 +206,8 @@ function handleClickSelection(sx, sy) {
   }
 
   if (shiftHeld) {
-    // Shift+click: toggle this stroke
     if (hit) hit.selected = !hit.selected;
   } else {
-    // Click: select only this stroke
     trazos.forEach(t => t.selected = false);
     if (hit) hit.selected = true;
   }
@@ -205,13 +218,11 @@ function handleClickSelection(sx, sy) {
 function keyPressed() {
   if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
 
-  // Track modifier keys
   if (keyCode === SHIFT) {
     shiftHeld = true;
     return;
   }
 
-  // Track space (pan mode)
   if (key === ' ') {
     spaceHeld = true;
     if (shiftHeld) {
@@ -219,10 +230,9 @@ function keyPressed() {
     } else {
       cursor('move');
     }
-    return false; // prevent scroll
+    return false;
   }
 
-  // Track axis keys (only when not drawing)
   let lowerKey = key.toLowerCase();
   if (!isDrawing && (lowerKey === 'x' || lowerKey === 'y' || lowerKey === 'z')) {
     axisHeld = lowerKey;
@@ -230,15 +240,13 @@ function keyPressed() {
     return;
   }
 
-  // Help overlay
   let helpEl = document.getElementById('help-overlay');
   if (helpEl && !helpEl.classList.contains('hidden')) {
     helpEl.classList.add('hidden');
     return false;
   }
 
-  // Cmd/Ctrl combinations
-  if (keyIsDown(91) || keyIsDown(93) || keyIsDown(17)) { // meta or ctrl
+  if (keyIsDown(91) || keyIsDown(93) || keyIsDown(17)) {
     if (key === 'z' || key === 'Z') {
       undo();
       return false;
@@ -324,7 +332,7 @@ function keyPressed() {
       break;
   }
 
-  if (keyCode === 9) { // Tab
+  if (keyCode === 9) {
     togglePanel();
     return false;
   }
@@ -357,13 +365,11 @@ function undo() {
     let idx = trazos.indexOf(action.stroke);
     if (idx !== -1) trazos.splice(idx, 1);
   } else if (action.type === 'delete') {
-    // Re-insert deleted strokes at their original indices (reverse order)
     for (let i = action.entries.length - 1; i >= 0; i--) {
       let e = action.entries[i];
       trazos.splice(e.index, 0, e.stroke);
     }
   } else if (action.type === 'transform') {
-    // Restore points from snapshot
     for (let entry of action.snapshots) {
       entry.stroke.points = entry.points.map(p => {
         let v = createVector(p.x, p.y, p.z);
@@ -400,7 +406,6 @@ function snapshotStrokes(strokes) {
 }
 
 function pushTransformUndo(snapshots) {
-  // Only push if points actually changed
   let changed = snapshots.some(entry => {
     let curr = entry.stroke.points;
     let orig = entry.points;
@@ -474,24 +479,19 @@ function applyToSelected(fn) {
   }
 }
 
-// Convert a screen-space delta (dx, dy pixels) to model-space delta
-// Same R⁻¹ as _screenToModel: Rx⁻¹ first, then Ry⁻¹, then Rz⁻¹
 function screenDeltaToModel(dx, dy) {
   let cosX = Math.cos(ux), sinX = Math.sin(ux);
   let cosY = Math.cos(uy), sinY = Math.sin(uy);
   let cosZ = Math.cos(uz), sinZ = Math.sin(uz);
 
-  // Step 1: Rx⁻¹
   let x1 = dx;
   let y1 =  cosX * dy;
   let z1 = -sinX * dy;
 
-  // Step 2: Ry⁻¹
   let x2 =  cosY * x1 - sinY * z1;
   let y2 = y1;
   let z2 =  sinY * x1 + cosY * z1;
 
-  // Step 3: Rz⁻¹
   let x3 =  cosZ * x2 + sinZ * y2;
   let y3 = -sinZ * x2 + cosZ * y2;
   let z3 = z2;
