@@ -185,14 +185,16 @@ function drawAxis() {
   line(0, 0, 0, 0, 0, len);
 
   // Small grid on XY plane (drawing plane)
-  let gridAlpha = darkMode ? 25 : 30;
-  stroke(darkMode ? 255 : 0, gridAlpha);
-  strokeWeight(0.5);
-  let gridSize = 400;
-  let step = 50;
-  for (let i = -gridSize; i <= gridSize; i += step) {
-    line(i, -gridSize, 0, i, gridSize, 0);
-    line(-gridSize, i, 0, gridSize, i, 0);
+  if (showGrid) {
+    let gridAlpha = darkMode ? 25 : 30;
+    stroke(darkMode ? 255 : 0, gridAlpha);
+    strokeWeight(0.5);
+    let gridSize = 400;
+    let step = 50;
+    for (let i = -gridSize; i <= gridSize; i += step) {
+      line(i, -gridSize, 0, i, gridSize, 0);
+      line(-gridSize, i, 0, gridSize, i, 0);
+    }
   }
 }
 

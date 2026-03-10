@@ -237,6 +237,11 @@ function keyPressed() {
       setView('bottom');
       break;
 
+    case 'g':
+    case 'G':
+      showGrid = !showGrid;
+      break;
+
     case 'e':
     case 'E':
       eraseSelected();
