@@ -1,67 +1,69 @@
 # Filippo 3D
 
-This is a 3D drawing program built with [Processing](http://www.processing.org) and named after Filippo Brunelleschi, the inventor of perspective.
+A 3D drawing tool named after [Filippo Brunelleschi](https://en.wikipedia.org/wiki/Filippo_Brunelleschi), the inventor of perspective. Built for teaching — draw on a projected screen with a stylus while your students watch, then rotate and explore the drawing in 3D space.
 
-The basic principle of Filippo3D is to draw on the screen, which is the <code>z = 0</code> surface; you always have to fix your lines in that plane, but your drawing can move freely in 3D space. 
+**[Live demo](https://herbertspencer.net/filippo3d/)**
 
-Drawings can be exported to single Pdfs, Pdf series like a flipbook of your model rotating and DXF. 
+## Principle
 
-![Filippo 3D Screenshot](data/drawing-chair.png)
+You always draw on the screen plane (`z = 0` of the current view). Pan and rotate the model freely, but every stroke is deposited on the surface you see — like drawing on glass in front of a 3D scene.
 
-### Update
-This project is outdated but a minimal [P5js version](https://herbertspencer.net/filippo3d/) is available online. It would be nice to translate te whole project and develop a robust interface with the original concept.
+## Controls
 
-## Keys
+### Drawing
 
-### Views
+| Key | Action |
+|-----|--------|
+| Click + drag | Freehand drawing |
+| `Shift` + drag | Straight line |
+| `,` `.` | Stroke weight −/+ |
+| `Cmd/Ctrl` + `Z` | Undo |
+| `E` | Erase selected strokes |
+| `N` | New drawing (clear all) |
+| `V` | Toggle Draw / Select mode |
 
-* <code>F</code>ront
-* <code>T</code>op
-* <code>L</code>eft
-* <code>R</code>ight
-* <code>B</code>ottom
-* bac<code>K</code>
-* SPACEBAR or MOUSE RIGHT BUTTON switches to free rotation mode
- 
-### Model Translation
+### Navigation
 
-This modifications are relative to mouse position in the X dimension fo the screen. If the mouse is on the left side, it will substract from the values, if it's in the right side, it will add. The closer to the margins, the more the values change.
+| Key | Action |
+|-----|--------|
+| `Space` + drag | Pan (move origin) |
+| `Shift` + `Space` + drag | Free 3D rotation |
+| `X` / `Y` / `Z` + drag | Rotate around axis |
+| `Shift` + `X` / `Y` / `Z` + drag | Pan along axis |
+| `F` `T` `L` `R` `K` `B` | View presets (Front, Top, Left, Right, bacK, Bottom) |
 
-* <code>1</code> While pressed, translates the drawinng in X
-* <code>2</code> While pressed, translates the drawinng in Y
-* <code>3</code> While pressed, translates the drawinng in Z
- 
-### Model Scalation
+### Selection mode (`V`)
 
-This modifications are relative to mouse position in the X dimension fo the screen. If the mouse is on the left side, it will substract from the values, if it's in the right side, it will add. The closer to the margins, the more the values change.
+With selected strokes:
 
-* <code>4</code> While pressed, scales the drawinng in X
-* <code>5</code> While pressed, scales the drawinng in Y
-* <code>6</code> While pressed, scales the drawinng in Z
- 
-### Model Rotation
-* <code>X</code> increases the rotation angle in X
-* <code>x</code> decreases the rotation angle in X
-* <code>Y</code> increases the rotation angle in Y
-* <code>y</code> decreases the rotation angle in Y
-* <code>Z</code> increases the rotation angle in Z
-* <code>z</code> decreases the rotation angle in Z
- 
-### Exporting
-* <code>p</code> exports a PDF of the current view
-* <code>P</code> exports a series of 36 PDFs rotating in Y
-* <code>d</code> exports a DXF of the 3D model
- 
-### Interface
-* <code>i</code> Display information
-* <code>A</code>xis turn ON/OFF
-* <code>e</code>rase the selected stroke
-* <code>u</code>ndo
-* <code>m</code> changes current mode, draw or select
-* <code>s</code> Select Everything
-* <code>w</code> unselect everything
-* <code>N</code> new drawing, erases everything and resets the view
-* <code>,</code> reduce stroke size
-* <code>.</code> increase stroke size
+| Key | Action |
+|-----|--------|
+| `Space` + drag | Translate selection |
+| `X` / `Y` / `Z` + drag | Rotate selection around axis |
+| `Shift` + `X` / `Y` / `Z` + drag | Scale selection along axis |
 
-Original [blog post](https://herbertspencer.net/2006/12/filippo-3d-ver-01/). All feedback is highly appreciated.
+### Display
+
+| Key | Action |
+|-----|--------|
+| `G` | Grid and axes on/off |
+| `O` | Orthographic / Perspective |
+| `M` | Dark / Light theme |
+| `Tab` | Show/hide panel |
+| `Cmd/Ctrl` + `S` | Export PNG |
+| `?` | Help overlay |
+
+## Tech
+
+- **p5.js** (WEBGL) for 3D rendering
+- **Pointer Events API** for stylus pressure sensitivity
+- Pure static files — no build step, no dependencies
+- Deploys to GitHub Pages from `gh-pages` branch
+
+## Legacy
+
+The original Processing (Java) version is preserved in the [`processing-original`](https://github.com/hspencer/filippo3d/tree/processing-original) branch and tagged as [`v1.0`](https://github.com/hspencer/filippo3d/releases/tag/v1.0). Original [blog post](https://herbertspencer.net/2006/12/filippo-3d-ver-01/).
+
+## License
+
+(cc) Herbert Spencer
