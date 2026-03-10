@@ -47,40 +47,58 @@ function mousePressed() {
 function mouseDragged() {
   let dx = mouseX - pmouseX;
   let dy = mouseY - pmouseY;
+  let hasSelection = !drawMode && trazos.some(t => t.selected);
 
-  // ── Space held: pan or rotate ──
+  // ── Space held: pan/translate ──
   if (spaceHeld) {
-    if (shiftHeld) {
-      // Shift+Space+drag = free 3D rotation
+    if (hasSelection) {
+      // Select mode: translate selection in screen plane → model space
+      applyToSelected(t => {
+        let d = screenDeltaToModel(dx, dy);
+        t.translate(d.x, d.y, d.z);
+      });
+    } else if (shiftHeld) {
+      // Shift+Space+drag = free 3D rotation (viewport)
       uy -= dx * 0.005;
       ux -= dy * 0.005;
       currentView = null;
       updateViewButtons();
     } else {
-      // Space+drag = pan (move origin)
+      // Space+drag = pan viewport
       panX += dx;
       panY += dy;
     }
     return;
   }
 
-  // ── Axis key held + drag: rotate or translate along axis ──
+  // ── Axis key held + drag ──
   if (axisHeld) {
-    let amount = dx * 0.005;       // horizontal drag = amount
-    let panAmount = dx;            // pixel-based for translation
+    let amount = dx * 0.005;
+    let panAmount = dx;
 
-    if (shiftHeld) {
-      // Shift+axis+drag = translate along axis
-      if (axisHeld === 'x') panX += panAmount;
-      if (axisHeld === 'y') panY += panAmount;
-      if (axisHeld === 'z') panZ += panAmount;
+    if (hasSelection) {
+      if (shiftHeld) {
+        // Select + Shift+axis+drag = scale selection
+        let factor = 1 + dx * 0.005;
+        applyToSelected(t => t.scaleAxis(axisHeld, factor));
+      } else {
+        // Select + axis+drag = rotate selection around axis
+        applyToSelected(t => t.rotateAroundAxis(axisHeld, amount));
+      }
     } else {
-      // axis+drag = rotate around axis
-      if (axisHeld === 'x') ux += amount;
-      if (axisHeld === 'y') uy += amount;
-      if (axisHeld === 'z') uz += amount;
-      currentView = null;
-      updateViewButtons();
+      if (shiftHeld) {
+        // Shift+axis+drag = translate viewport along axis
+        if (axisHeld === 'x') panX += panAmount;
+        if (axisHeld === 'y') panY += panAmount;
+        if (axisHeld === 'z') panZ += panAmount;
+      } else {
+        // axis+drag = rotate viewport around axis
+        if (axisHeld === 'x') ux += amount;
+        if (axisHeld === 'y') uy += amount;
+        if (axisHeld === 'z') uz += amount;
+        currentView = null;
+        updateViewButtons();
+      }
     }
     return;
   }
@@ -153,8 +171,9 @@ function keyPressed() {
   }
 
   // Track axis keys (only when not drawing)
-  if (!isDrawing && (key === 'x' || key === 'y' || key === 'z')) {
-    axisHeld = key;
+  let lowerKey = key.toLowerCase();
+  if (!isDrawing && (lowerKey === 'x' || lowerKey === 'y' || lowerKey === 'z')) {
+    axisHeld = lowerKey;
     cursor('ew-resize');
     return;
   }
@@ -248,8 +267,9 @@ function keyReleased() {
     spaceHeld = false;
     cursor(CROSS);
   }
-  if (key === 'x' || key === 'y' || key === 'z') {
-    if (axisHeld === key) {
+  let releasedKey = key.toLowerCase();
+  if (releasedKey === 'x' || releasedKey === 'y' || releasedKey === 'z') {
+    if (axisHeld === releasedKey) {
       axisHeld = null;
       cursor(CROSS);
     }
@@ -315,6 +335,35 @@ function showRotateIndicator(text) {
 function removeRotateIndicator() {
   let el = document.querySelector('.rotate-indicator');
   if (el) el.remove();
+}
+
+// ── Selection helpers ──
+
+function applyToSelected(fn) {
+  for (let t of trazos) {
+    if (t.selected) fn(t);
+  }
+}
+
+// Convert a screen-space delta (dx, dy pixels) to model-space delta
+function screenDeltaToModel(dx, dy) {
+  let cosX = Math.cos(ux), sinX = Math.sin(ux);
+  let cosY = Math.cos(uy), sinY = Math.sin(uy);
+  let cosZ = Math.cos(uz), sinZ = Math.sin(uz);
+
+  // Same inverse rotation as _screenToModel but for a delta (no z)
+  let x1 =  cosZ * dx + sinZ * dy;
+  let y1 = -sinZ * dx + cosZ * dy;
+
+  let x2 = cosY * x1;
+  let y2 = y1;
+  let z2 = sinY * x1;
+
+  let x3 = x2;
+  let y3 =  cosX * y2 + sinX * z2;
+  let z3 = -sinX * y2 + cosX * z2;
+
+  return { x: x3, y: y3, z: z3 };
 }
 
 // ── Window resize ──

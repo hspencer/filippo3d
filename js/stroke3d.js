@@ -90,6 +90,66 @@ class Stroke3D {
     }
   }
 
+  // ── Transformations (operate on model-space points) ──
+
+  // Translate all points by dx, dy, dz in model space
+  translate(dx, dy, dz) {
+    for (let p of this.points) {
+      p.x += dx;
+      p.y += dy;
+      p.z += dz;
+    }
+  }
+
+  // Rotate all points around an axis by angle (radians), relative to centroid
+  rotateAroundAxis(axis, angle) {
+    let c = this._centroid();
+    let cos = Math.cos(angle), sin = Math.sin(angle);
+
+    for (let p of this.points) {
+      let x = p.x - c.x, y = p.y - c.y, z = p.z - c.z;
+      let nx, ny, nz;
+
+      if (axis === 'x') {
+        nx = x;
+        ny = cos * y - sin * z;
+        nz = sin * y + cos * z;
+      } else if (axis === 'y') {
+        nx = cos * x + sin * z;
+        ny = y;
+        nz = -sin * x + cos * z;
+      } else { // z
+        nx = cos * x - sin * y;
+        ny = sin * x + cos * y;
+        nz = z;
+      }
+
+      p.x = nx + c.x;
+      p.y = ny + c.y;
+      p.z = nz + c.z;
+    }
+  }
+
+  // Scale all points along an axis, relative to centroid
+  scaleAxis(axis, factor) {
+    let c = this._centroid();
+    for (let p of this.points) {
+      if (axis === 'x') p.x = c.x + (p.x - c.x) * factor;
+      if (axis === 'y') p.y = c.y + (p.y - c.y) * factor;
+      if (axis === 'z') p.z = c.z + (p.z - c.z) * factor;
+    }
+  }
+
+  // Centroid of all points
+  _centroid() {
+    let sx = 0, sy = 0, sz = 0;
+    for (let p of this.points) {
+      sx += p.x; sy += p.y; sz += p.z;
+    }
+    let n = this.points.length;
+    return { x: sx / n, y: sy / n, z: sz / n };
+  }
+
   // Project a model-space point to screen using current rotation + pan
   _modelToScreen(p) {
     let cx = Math.cos(ux), sx2 = Math.sin(ux);
