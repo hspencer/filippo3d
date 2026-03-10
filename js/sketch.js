@@ -8,6 +8,9 @@ function setup() {
   // Setup pointer events for stylus pressure
   setupPointerEvents();
 
+  // Setup keyboard events (direct window listeners for iPad compatibility)
+  setupKeyboardEvents();
+
   // Setup UI panel
   setupUI();
 

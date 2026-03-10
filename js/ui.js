@@ -1,8 +1,9 @@
 // Filippo 3D - UI panel logic
 
 function setupUI() {
-  // Panel toggle
-  document.getElementById('panel-toggle').addEventListener('click', togglePanel);
+  // Panel toggle (open) and close buttons
+  document.getElementById('panel-toggle').addEventListener('click', () => openPanel());
+  document.getElementById('panel-close').addEventListener('click', () => closePanel());
 
   // Color picker
   document.getElementById('stroke-color').addEventListener('input', e => {
@@ -19,6 +20,7 @@ function setupUI() {
   // Mode buttons
   document.getElementById('btn-draw').addEventListener('click', () => {
     drawMode = true;
+    trazos.forEach(t => t.selected = false);
     cursor(CROSS);
     document.getElementById('btn-draw').classList.add('active');
     document.getElementById('btn-select').classList.remove('active');
@@ -60,11 +62,32 @@ function setupUI() {
   document.getElementById('btn-undo').addEventListener('click', undo);
   document.getElementById('btn-clear').addEventListener('click', newDrawing);
   document.getElementById('btn-export').addEventListener('click', exportPNG);
+
+  // Version label
+  let vLabel = document.getElementById('version-label');
+  if (vLabel) vLabel.textContent = 'v' + VERSION;
+
+  // Initialize feather icons
+  if (typeof feather !== 'undefined') feather.replace();
 }
 
 function togglePanel() {
   let panel = document.getElementById('panel');
-  panel.classList.toggle('collapsed');
+  if (panel.classList.contains('collapsed')) {
+    openPanel();
+  } else {
+    closePanel();
+  }
+}
+
+function openPanel() {
+  document.getElementById('panel').classList.remove('collapsed');
+  document.getElementById('panel-toggle').classList.remove('panel-closed');
+}
+
+function closePanel() {
+  document.getElementById('panel').classList.add('collapsed');
+  document.getElementById('panel-toggle').classList.add('panel-closed');
 }
 
 function updateViewButtons() {

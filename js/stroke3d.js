@@ -6,6 +6,15 @@
 //   Forward:  apply Rz first, then Ry, then Rx
 //   Inverse:  apply Rx⁻¹ first, then Ry⁻¹, then Rz⁻¹
 
+// Trig cache — updated once per frame in drawScene()
+let _trig = { cosX: 1, sinX: 0, cosY: 1, sinY: 0, cosZ: 1, sinZ: 0, frame: -1 };
+
+function updateTrigCache() {
+  _trig.cosX = Math.cos(ux); _trig.sinX = Math.sin(ux);
+  _trig.cosY = Math.cos(uy); _trig.sinY = Math.sin(uy);
+  _trig.cosZ = Math.cos(uz); _trig.sinZ = Math.sin(uz);
+}
+
 class Stroke3D {
   constructor(col, weight) {
     this.points = [];
@@ -17,6 +26,14 @@ class Stroke3D {
   addPoint(x, y, z, pressure) {
     let p = this._screenToModel(x, y);
     p.pressure = pressure || 0.5;
+
+    // Skip if too close to last point (avoid duplicate vertices)
+    if (this.points.length > 0) {
+      let last = this.points[this.points.length - 1];
+      let dx = p.x - last.x, dy = p.y - last.y, dz = p.z - last.z;
+      if (dx * dx + dy * dy + dz * dz < 4) return; // ~2px minimum distance
+    }
+
     this.points.push(p);
   }
 
@@ -56,9 +73,7 @@ class Stroke3D {
     // Forward: screen = R * model + pan
     // R = Rx * Ry * Rz → apply Rz first, then Ry, then Rx
 
-    let cosX = Math.cos(ux), sinX = Math.sin(ux);
-    let cosY = Math.cos(uy), sinY = Math.sin(uy);
-    let cosZ = Math.cos(uz), sinZ = Math.sin(uz);
+    let { cosX, sinX, cosY, sinY, cosZ, sinZ } = _trig;
 
     // Step 1: Rz
     let x1 = cosZ * p.x - sinZ * p.y;
@@ -73,8 +88,6 @@ class Stroke3D {
     // Step 3: Rx
     let x3 = x2;
     let y3 = cosX * y2 - sinX * z2;
-    let z3 = sinX * y2 + cosX * z2;
-
     return {
       x: x3 + panX + width / 2,
       y: y3 + panY + height / 2
@@ -195,5 +208,49 @@ class Stroke3D {
       }
     }
     return false;
+  }
+
+  // Simplify stroke using Ramer-Douglas-Peucker algorithm
+  simplify(epsilon) {
+    if (this.points.length < 3) return;
+    this.points = Stroke3D._rdp(this.points, epsilon);
+  }
+
+  static _rdp(pts, epsilon) {
+    if (pts.length < 3) return pts;
+
+    let first = pts[0], last = pts[pts.length - 1];
+    let maxDist = 0, maxIdx = 0;
+
+    for (let i = 1; i < pts.length - 1; i++) {
+      let d = Stroke3D._pointLineDistance(pts[i], first, last);
+      if (d > maxDist) {
+        maxDist = d;
+        maxIdx = i;
+      }
+    }
+
+    if (maxDist > epsilon) {
+      let left = Stroke3D._rdp(pts.slice(0, maxIdx + 1), epsilon);
+      let right = Stroke3D._rdp(pts.slice(maxIdx), epsilon);
+      return left.slice(0, -1).concat(right);
+    } else {
+      // Keep endpoints, interpolate pressure from original midpoint
+      return [first, last];
+    }
+  }
+
+  static _pointLineDistance(p, a, b) {
+    let dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+    let lenSq = dx * dx + dy * dy + dz * dz;
+    if (lenSq === 0) {
+      let ex = p.x - a.x, ey = p.y - a.y, ez = p.z - a.z;
+      return Math.sqrt(ex * ex + ey * ey + ez * ez);
+    }
+    let t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy + (p.z - a.z) * dz) / lenSq));
+    let ex = p.x - (a.x + t * dx);
+    let ey = p.y - (a.y + t * dy);
+    let ez = p.z - (a.z + t * dz);
+    return Math.sqrt(ex * ex + ey * ey + ez * ez);
   }
 }

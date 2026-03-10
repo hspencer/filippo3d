@@ -4,27 +4,39 @@
 // Internal pointer tracking
 let _px = 0, _py = 0;   // current pointer position (screen pixels)
 let _ppx = 0, _ppy = 0; // previous pointer position
+let _canvas = null;      // cached canvas reference
+let _pendingMove = null; // throttled pointermove event
 
 // ── Pointer Events (all drawing/interaction input) ──
 
 function setupPointerEvents() {
   setTimeout(() => {
-    let canvas = document.querySelector('canvas');
-    if (!canvas) return;
+    _canvas = document.querySelector('canvas');
+    if (!_canvas) return;
 
-    canvas.style.touchAction = 'none';
+    _canvas.style.touchAction = 'none';
+    _canvas.setAttribute('tabindex', '0');
+    _canvas.focus();
 
-    canvas.addEventListener('pointerdown', onPointerDown);
-    canvas.addEventListener('pointermove', onPointerMove);
-    canvas.addEventListener('pointerup', onPointerUp);
-    canvas.addEventListener('pointercancel', onPointerUp);
-    canvas.addEventListener('contextmenu', e => e.preventDefault());
+    // Re-focus canvas on any tap so iPad keyboard events reach p5
+    _canvas.addEventListener('pointerdown', () => _canvas.focus());
+
+    // { passive: false } required on iOS Safari to allow preventDefault()
+    _canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+    _canvas.addEventListener('pointermove', onPointerMove, { passive: false });
+    _canvas.addEventListener('pointerup', onPointerUp);
+    _canvas.addEventListener('pointercancel', onPointerUp);
+    _canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Prevent iOS Safari from scrolling/bouncing on touch
+    _canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+    _canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+    _canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
   }, 100);
 }
 
 function getPos(e) {
-  let canvas = document.querySelector('canvas');
-  let rect = canvas.getBoundingClientRect();
+  let rect = _canvas.getBoundingClientRect();
   return {
     x: e.clientX - rect.left,
     y: e.clientY - rect.top
@@ -66,13 +78,25 @@ function onPointerDown(e) {
 
 function onPointerMove(e) {
   e.preventDefault();
-  let pos = getPos(e);
+  // Always track position and pressure immediately
   _ppx = _px; _ppy = _py;
+  let pos = getPos(e);
   _px = pos.x; _py = pos.y;
   currentPressure = e.pressure || 0.5;
 
   if (e.buttons === 0) return; // not dragging
 
+  // Throttle processing to animation frame rate
+  if (!_pendingMove) {
+    _pendingMove = true;
+    requestAnimationFrame(() => {
+      _pendingMove = false;
+      _processPointerMove();
+    });
+  }
+}
+
+function _processPointerMove() {
   let dx = _px - _ppx;
   let dy = _py - _ppy;
   let hasSelection = !drawMode && trazos.some(t => t.selected);
@@ -126,8 +150,8 @@ function onPointerMove(e) {
 
   // ── Drawing ──
   if (isDrawing && trazoActual && drawMode) {
-    let x = pos.x - width / 2;
-    let y = pos.y - height / 2;
+    let x = _px - width / 2;
+    let y = _py - height / 2;
 
     if (shiftHeld) {
       let first = trazoActual.points[0];
@@ -140,8 +164,8 @@ function onPointerMove(e) {
 
   // ── Marquee ──
   if (marquee && !drawMode) {
-    marquee.x1 = pos.x;
-    marquee.y1 = pos.y;
+    marquee.x1 = _px;
+    marquee.y1 = _py;
   }
 }
 
@@ -159,6 +183,7 @@ function onPointerUp(e) {
 
   if (isDrawing && trazoActual) {
     if (trazoActual.points.length > 1) {
+      trazoActual.simplify(1.5);
       trazos.push(trazoActual);
       undoStack.push({ type: 'add', stroke: trazoActual });
     }
@@ -214,8 +239,36 @@ function handleClickSelection(sx, sy) {
 }
 
 // ── Keyboard ──
+// We use direct window listeners instead of p5's keyPressed/keyReleased
+// because some browsers (Arc on iPad) don't propagate keyboard events to p5.
 
-function keyPressed() {
+function setupKeyboardEvents() {
+  window.addEventListener('keydown', _onKeyDown);
+  window.addEventListener('keyup', _onKeyUp);
+}
+
+function _onKeyDown(e) {
+  // Bridge to p5 globals so the rest of the code can use them
+  key = e.key;
+  keyCode = e.keyCode;
+  _metaHeld = e.metaKey || e.ctrlKey;
+  _handleKeyDown();
+}
+
+function _onKeyUp(e) {
+  key = e.key;
+  keyCode = e.keyCode;
+  _metaHeld = e.metaKey || e.ctrlKey;
+  _handleKeyUp();
+}
+
+let _metaHeld = false;
+
+// Disable p5 keyboard handlers (we use our own window listeners)
+function keyPressed()  { return false; }
+function keyReleased() { return false; }
+
+function _handleKeyDown() {
   if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
 
   if (keyCode === SHIFT) {
@@ -246,7 +299,7 @@ function keyPressed() {
     return false;
   }
 
-  if (keyIsDown(91) || keyIsDown(93) || keyIsDown(17)) {
+  if (_metaHeld) {
     if (key === 'z' || key === 'Z') {
       undo();
       return false;
@@ -311,6 +364,7 @@ function keyPressed() {
     case 'v':
     case 'V':
       drawMode = !drawMode;
+      if (drawMode) trazos.forEach(t => t.selected = false);
       cursor(drawMode ? CROSS : ARROW);
       document.getElementById('btn-draw').classList.toggle('active', drawMode);
       document.getElementById('btn-select').classList.toggle('active', !drawMode);
@@ -338,7 +392,7 @@ function keyPressed() {
   }
 }
 
-function keyReleased() {
+function _handleKeyUp() {
   if (keyCode === SHIFT) {
     shiftHeld = false;
   }

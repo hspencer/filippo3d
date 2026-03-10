@@ -1,4 +1,4 @@
-# Filippo 3D
+# Filippo 3D v2.0
 
 A 3D drawing tool named after [Filippo Brunelleschi](https://en.wikipedia.org/wiki/Filippo_Brunelleschi), the inventor of perspective. Built for teaching — draw on a projected screen with a stylus while your students watch, then rotate and explore the drawing in 3D space.
 
@@ -56,7 +56,8 @@ With selected strokes:
 ## Tech
 
 - **p5.js** (WEBGL) for 3D rendering
-- **Pointer Events API** for stylus pressure sensitivity
+- **Pointer Events API** for unified mouse/touch/stylus input with pressure sensitivity
+- Stylus pressure support (e.g., Apple Pencil) — stroke weight responds to pen pressure
 - Pure static files — no build step, no dependencies
 - Deploys to GitHub Pages from `gh-pages` branch
 

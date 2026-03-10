@@ -1,6 +1,8 @@
 // Filippo 3D - Drawing & 3D scene rendering
 
 function drawScene() {
+  updateTrigCache();
+
   // Projection
   if (useOrtho) {
     ortho(-width / 2, width / 2, -height / 2, height / 2, -10000, 10000);

@@ -4,6 +4,12 @@
   box-sizing: border-box;
 }
 
+.btn svg, .panel-toggle svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+}
+
 html, body {
   overflow: hidden;
   width: 100%;
@@ -45,27 +51,64 @@ canvas {
 }
 
 .panel-toggle {
-  position: absolute;
-  top: 8px;
-  right: -36px;
+  position: fixed;
+  top: 88px;
+  left: 36px;
+  z-index: 1001;
   width: 28px;
   height: 28px;
   background: rgba(20, 20, 20, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 4px;
   color: #aaa;
-  font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s;
-  z-index: 101;
+  transition: opacity 0.2s, background 0.15s;
+}
+
+.panel-toggle.panel-closed {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.panel-toggle:not(.panel-closed) {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .panel-toggle:hover {
   background: rgba(40, 40, 40, 0.95);
   color: #fff;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.panel-header h1 {
+  margin: 0;
+}
+
+.panel-close {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.panel-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .panel-content {
@@ -75,7 +118,7 @@ canvas {
 .panel-content h1 {
   font-size: 18px;
   font-weight: 300;
-  margin-bottom: 16px;
+  margin-bottom: 0;
   color: #fff;
   letter-spacing: 1px;
 }
@@ -83,6 +126,13 @@ canvas {
 .panel-content h1 .accent {
   color: #e74c3c;
   font-weight: 700;
+}
+
+.version {
+  font-size: 10px;
+  font-weight: 400;
+  color: #666;
+  vertical-align: middle;
 }
 
 .section {
@@ -158,6 +208,10 @@ input[type="range"]::-webkit-slider-thumb {
   color: #aaa;
   font-size: 11px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   transition: all 0.12s;
   font-family: inherit;
 }
@@ -294,6 +348,15 @@ body.light .panel-toggle {
   background: rgba(245, 245, 240, 0.85);
   border-color: rgba(0, 0, 0, 0.12);
   color: #666;
+}
+
+body.light .panel-close {
+  color: #666;
+}
+
+body.light .panel-close:hover {
+  color: #222;
+  background: rgba(0, 0, 0, 0.08);
 }
 
 body.light .btn,

@@ -6,12 +6,16 @@
   <title>Filippo 3D</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 </head>
 <body>
+  <button id="panel-toggle" class="panel-toggle" title="Abrir panel"><i data-feather="menu"></i></button>
   <div id="panel" class="panel">
-    <button id="panel-toggle" class="panel-toggle" title="Toggle panel (Tab)">&#9776;</button>
     <div class="panel-content">
-      <h1>Filippo <span class="accent">3D</span></h1>
+      <div class="panel-header">
+        <h1>Filippo <span class="accent">3D</span> <span id="version-label" class="version"></span></h1>
+        <button id="panel-close" class="panel-close" title="Cerrar panel"><i data-feather="x"></i></button>
+      </div>
 
       <div class="section">
         <label>Color</label>
@@ -26,12 +30,12 @@
       <div class="section">
         <label>Modo</label>
         <div class="btn-group">
-          <button id="btn-draw" class="btn active" title="Dibujo libre">Dibujo</button>
-          <button id="btn-select" class="btn" title="Seleccionar trazos">Selección</button>
+          <button id="btn-draw" class="btn active" title="Dibujo libre"><i data-feather="edit-3"></i> Dibujo</button>
+          <button id="btn-select" class="btn" title="Seleccionar trazos"><i data-feather="mouse-pointer"></i> Selección</button>
         </div>
         <div class="btn-group" style="margin-top:4px">
-          <button id="btn-persp" class="btn active" title="Perspectiva">Perspectiva</button>
-          <button id="btn-ortho" class="btn" title="Ortográfica (O)">Ortho</button>
+          <button id="btn-persp" class="btn active" title="Perspectiva"><i data-feather="box"></i> Perspectiva</button>
+          <button id="btn-ortho" class="btn" title="Ortográfica (O)"><i data-feather="square"></i> Ortho</button>
         </div>
       </div>
 
@@ -50,17 +54,17 @@
       <div class="section">
         <label>Fondo</label>
         <div class="btn-group">
-          <button id="btn-dark" class="btn active">Oscuro</button>
-          <button id="btn-light" class="btn">Claro</button>
+          <button id="btn-dark" class="btn active"><i data-feather="moon"></i> Oscuro</button>
+          <button id="btn-light" class="btn"><i data-feather="sun"></i> Claro</button>
         </div>
       </div>
 
       <div class="section">
         <label>Acciones</label>
         <div class="btn-group">
-          <button id="btn-undo" class="btn" title="Deshacer (Z)">↩ Undo</button>
-          <button id="btn-clear" class="btn" title="Limpiar todo">✕ Clear</button>
-          <button id="btn-export" class="btn" title="Exportar PNG (S)">⬇ PNG</button>
+          <button id="btn-undo" class="btn" title="Deshacer (Z)"><i data-feather="rotate-ccw"></i> Undo</button>
+          <button id="btn-clear" class="btn" title="Limpiar todo"><i data-feather="trash-2"></i> Clear</button>
+          <button id="btn-export" class="btn" title="Exportar PNG (S)"><i data-feather="download"></i> PNG</button>
         </div>
       </div>
 
@@ -132,8 +136,6 @@
       <p class="help-dismiss">Presiona cualquier tecla para cerrar</p>
     </div>
   </div>
-
-  <canvas id="defaultCanvas0"></canvas>
 
   <script src="js/variables.js"></script>
   <script src="js/stroke3d.js"></script>
