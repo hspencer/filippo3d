@@ -26,9 +26,14 @@ function mousePressed() {
     return;
   }
 
-  // Modifier modes: don't start drawing
+  // Modifier modes: don't start drawing, but snapshot for undo
   if (spaceHeld || axisHeld) {
     interacting = true;
+    // Snapshot selected strokes before transform
+    let selected = trazos.filter(t => t.selected);
+    if (!drawMode && selected.length > 0) {
+      transformSnapshot = snapshotStrokes(selected);
+    }
     return;
   }
 
@@ -129,12 +134,18 @@ function mouseDragged() {
 function mouseReleased() {
   if (interacting) {
     interacting = false;
+    // If we were transforming selected strokes, push undo action
+    if (transformSnapshot) {
+      pushTransformUndo(transformSnapshot);
+      transformSnapshot = null;
+    }
     return;
   }
 
   if (isDrawing && trazoActual) {
     if (trazoActual.points.length > 1) {
       trazos.push(trazoActual);
+      undoStack.push({ type: 'add', stroke: trazoActual });
     }
     trazoActual = null;
     isDrawing = false;
@@ -339,21 +350,79 @@ function keyReleased() {
 // ── Actions ──
 
 function undo() {
-  if (trazos.length > 0) {
-    trazos.pop();
-    updateStatus();
+  if (undoStack.length === 0) return;
+  let action = undoStack.pop();
+
+  if (action.type === 'add') {
+    let idx = trazos.indexOf(action.stroke);
+    if (idx !== -1) trazos.splice(idx, 1);
+  } else if (action.type === 'delete') {
+    // Re-insert deleted strokes at their original indices (reverse order)
+    for (let i = action.entries.length - 1; i >= 0; i--) {
+      let e = action.entries[i];
+      trazos.splice(e.index, 0, e.stroke);
+    }
+  } else if (action.type === 'transform') {
+    // Restore points from snapshot
+    for (let entry of action.snapshots) {
+      entry.stroke.points = entry.points.map(p => {
+        let v = createVector(p.x, p.y, p.z);
+        v.pressure = p.pressure;
+        return v;
+      });
+    }
   }
+
+  updateStatus();
 }
 
 function eraseSelected() {
-  trazos = trazos.filter(t => !t.selected);
+  let entries = [];
+  for (let i = trazos.length - 1; i >= 0; i--) {
+    if (trazos[i].selected) {
+      entries.unshift({ stroke: trazos[i], index: i });
+      trazos.splice(i, 1);
+    }
+  }
+  if (entries.length > 0) {
+    undoStack.push({ type: 'delete', entries });
+  }
   updateStatus();
+}
+
+// ── Undo helpers ──
+
+function snapshotStrokes(strokes) {
+  return strokes.map(s => ({
+    stroke: s,
+    points: s.points.map(p => ({ x: p.x, y: p.y, z: p.z, pressure: p.pressure }))
+  }));
+}
+
+function pushTransformUndo(snapshots) {
+  // Only push if points actually changed
+  let changed = snapshots.some(entry => {
+    let curr = entry.stroke.points;
+    let orig = entry.points;
+    if (curr.length !== orig.length) return true;
+    for (let i = 0; i < curr.length; i++) {
+      if (Math.abs(curr[i].x - orig[i].x) > 0.001 ||
+          Math.abs(curr[i].y - orig[i].y) > 0.001 ||
+          Math.abs(curr[i].z - orig[i].z) > 0.001) return true;
+    }
+    return false;
+  });
+  if (changed) {
+    undoStack.push({ type: 'transform', snapshots });
+  }
 }
 
 function newDrawing() {
   trazos = [];
   trazoActual = null;
   isDrawing = false;
+  undoStack = [];
+  transformSnapshot = null;
   ux = 0; uy = 0; uz = 0;
   nx = 0; ny = 0; nz = 0;
   panX = 0; panY = 0; panZ = 0;

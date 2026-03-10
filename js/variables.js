@@ -29,6 +29,10 @@ let interacting = false;   // true while dragging in a modifier mode
 // Marquee selection
 let marquee = null;        // { x0, y0, x1, y1 } while dragging, null otherwise
 
+// Undo history
+let undoStack = [];        // array of actions
+let transformSnapshot = null; // temp snapshot during transform drag
+
 // Stylus / pointer
 let currentPressure = 0.5;
 let pointerType = 'mouse';
