@@ -6,6 +6,7 @@ class Stroke3D {
     this.col = col || '#ffffff';
     this.weight = weight || 2;
     this.selected = false;
+    this.screenPoints = []; // cached screen projections, updated each frame
   }
 
   addPoint(x, y, z, pressure) {
@@ -39,6 +40,15 @@ class Stroke3D {
 
   draw(highlight) {
     if (this.points.length < 2) return;
+
+    // Cache screen projections (we're inside the transform context here)
+    this.screenPoints = [];
+    for (let p of this.points) {
+      this.screenPoints.push({
+        x: screenX(p.x, p.y, p.z),
+        y: screenY(p.x, p.y, p.z)
+      });
+    }
 
     let c = color(this.col);
     if (this.selected || highlight) {
@@ -81,23 +91,13 @@ class Stroke3D {
     }
   }
 
-  // Check if a screen point is near this stroke (for selection)
+  // Check if a screen point is near this stroke (uses cached projections)
   hitTest(sx, sy, threshold) {
-    threshold = threshold || 10;
-    for (let p of this.points) {
-      let sp = screenPosition(p.x, p.y, p.z);
-      if (sp && dist(sx, sy, sp.x, sp.y) < threshold) {
-        return true;
-      }
+    threshold = threshold || 12;
+    for (let sp of this.screenPoints) {
+      let d = Math.sqrt((sx - sp.x) ** 2 + (sy - sp.y) ** 2);
+      if (d < threshold) return true;
     }
     return false;
   }
-}
-
-// Helper: get screen position of a 3D point
-function screenPosition(x, y, z) {
-  // Use p5's screenX/screenY within the current transformation matrix
-  let sx = screenX(x, y, z);
-  let sy = screenY(x, y, z);
-  return { x: sx, y: sy };
 }
