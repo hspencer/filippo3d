@@ -169,6 +169,8 @@ function drawReferenceCube() {
 }
 
 function drawAxis() {
+  if (!showGrid) return;
+
   let len = 60;
   let alpha = 80;
   strokeWeight(1);
@@ -186,7 +188,7 @@ function drawAxis() {
   line(0, 0, 0, 0, 0, len);
 
   // Small grid on XY plane (drawing plane)
-  if (showGrid) {
+  {
     let gridAlpha = darkMode ? 25 : 30;
     stroke(darkMode ? 255 : 0, gridAlpha);
     strokeWeight(0.5);
