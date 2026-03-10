@@ -5,7 +5,8 @@
 let _px = 0, _py = 0;   // current pointer position (screen pixels)
 let _ppx = 0, _ppy = 0; // previous pointer position
 let _canvas = null;      // cached canvas reference
-let _pendingMove = null; // throttled pointermove event
+let _pendingMove = null; // throttled pointermove
+let _accumDx = 0, _accumDy = 0; // accumulated deltas for throttled ops
 
 // ── Pointer Events (all drawing/interaction input) ──
 
@@ -78,15 +79,38 @@ function onPointerDown(e) {
 
 function onPointerMove(e) {
   e.preventDefault();
-  // Always track position and pressure immediately
-  _ppx = _px; _ppy = _py;
   let pos = getPos(e);
+  let dx = pos.x - _px;
+  let dy = pos.y - _py;
+  _ppx = _px; _ppy = _py;
   _px = pos.x; _py = pos.y;
   currentPressure = e.pressure || 0.5;
 
   if (e.buttons === 0) return; // not dragging
 
-  // Throttle processing to animation frame rate
+  // Drawing and marquee: process every event for accuracy
+  if (isDrawing && trazoActual && drawMode) {
+    let x = _px - width / 2;
+    let y = _py - height / 2;
+    if (shiftHeld) {
+      let first = trazoActual.points[0];
+      trazoActual.points = [first];
+      trazoActual.addPoint(x, y, 0, currentPressure);
+    } else {
+      trazoActual.addPoint(x, y, 0, currentPressure);
+    }
+    return;
+  }
+
+  if (marquee && !drawMode) {
+    marquee.x1 = _px;
+    marquee.y1 = _py;
+    return;
+  }
+
+  // Pan/rotate/transform: accumulate deltas and throttle to rAF
+  _accumDx += dx;
+  _accumDy += dy;
   if (!_pendingMove) {
     _pendingMove = true;
     requestAnimationFrame(() => {
@@ -97,8 +121,10 @@ function onPointerMove(e) {
 }
 
 function _processPointerMove() {
-  let dx = _px - _ppx;
-  let dy = _py - _ppy;
+  let dx = _accumDx;
+  let dy = _accumDy;
+  _accumDx = 0;
+  _accumDy = 0;
   let hasSelection = !drawMode && trazos.some(t => t.selected);
 
   // ── Space held: pan/translate ──
@@ -148,25 +174,6 @@ function _processPointerMove() {
     return;
   }
 
-  // ── Drawing ──
-  if (isDrawing && trazoActual && drawMode) {
-    let x = _px - width / 2;
-    let y = _py - height / 2;
-
-    if (shiftHeld) {
-      let first = trazoActual.points[0];
-      trazoActual.points = [first];
-      trazoActual.addPoint(x, y, 0, currentPressure);
-    } else {
-      trazoActual.addPoint(x, y, 0, currentPressure);
-    }
-  }
-
-  // ── Marquee ──
-  if (marquee && !drawMode) {
-    marquee.x1 = _px;
-    marquee.y1 = _py;
-  }
 }
 
 function onPointerUp(e) {
