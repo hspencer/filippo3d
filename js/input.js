@@ -238,6 +238,11 @@ function keyPressed() {
       showGrid = !showGrid;
       break;
 
+    case 'o':
+    case 'O':
+      useOrtho = !useOrtho;
+      break;
+
     case 'e':
     case 'E':
       eraseSelected();

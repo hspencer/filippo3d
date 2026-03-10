@@ -18,6 +18,7 @@ let drawMode = true;       // true = draw, false = select
 let darkMode = true;
 let animatingView = false;
 let showGrid = true;
+let useOrtho = false;
 
 // Modifier-driven modes (active while key held)
 let spaceHeld = false;     // pan mode

@@ -1,6 +1,13 @@
 // Filippo 3D - Drawing & 3D scene rendering
 
 function drawScene() {
+  // Projection
+  if (useOrtho) {
+    ortho(-width / 2, width / 2, -height / 2, height / 2, -10000, 10000);
+  } else {
+    perspective();
+  }
+
   // Background
   let bg = darkMode ? BG_DARK : BG_LIGHT;
   background(bg[0], bg[1], bg[2]);
