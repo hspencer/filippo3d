@@ -244,6 +244,14 @@ function keyPressed() {
       syncProjectionButtons();
       break;
 
+    case 'v':
+    case 'V':
+      drawMode = !drawMode;
+      cursor(drawMode ? CROSS : ARROW);
+      document.getElementById('btn-draw').classList.toggle('active', drawMode);
+      document.getElementById('btn-select').classList.toggle('active', !drawMode);
+      break;
+
     case 'e':
     case 'E':
       eraseSelected();
