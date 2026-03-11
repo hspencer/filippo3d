@@ -1,4 +1,4 @@
-# Filippo 3D v2.0
+# Filippo 3D v2.1
 
 A 3D drawing tool named after [Filippo Brunelleschi](https://en.wikipedia.org/wiki/Filippo_Brunelleschi), the inventor of perspective. Built for teaching — draw on a projected screen with a stylus while your students watch, then rotate and explore the drawing in 3D space.
 
@@ -21,6 +21,8 @@ You always draw on the screen plane (`z = 0` of the current view). Pan and rotat
 | `E` | Erase selected strokes |
 | `N` | New drawing (clear all) |
 | `V` | Toggle Draw / Select mode |
+| `D` | Depth guide — show where strokes cross the drawing plane |
+| `D` + scroll | Shift drawing in depth to find intersections |
 
 ### Navigation
 
@@ -52,6 +54,10 @@ With selected strokes:
 | `Tab` | Show/hide panel |
 | `Cmd/Ctrl` + `S` | Export PNG |
 | `?` | Help overlay |
+
+## File format
+
+Drawings save as `.f3d` files (JSON). Older `.json` files are still supported on import.
 
 ## Tech
 

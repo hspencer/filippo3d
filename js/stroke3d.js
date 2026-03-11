@@ -88,9 +88,11 @@ class Stroke3D {
     // Step 3: Rx
     let x3 = x2;
     let y3 = cosX * y2 - sinX * z2;
+    let z3 = sinX * y2 + cosX * z2;
     return {
       x: x3 + panX + width / 2,
-      y: y3 + panY + height / 2
+      y: y3 + panY + height / 2,
+      z: z3 + panZ
     };
   }
 

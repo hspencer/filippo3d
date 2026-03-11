@@ -1,6 +1,6 @@
 // Filippo 3D - Global State
 
-const VERSION = '2.0.0';
+const VERSION = '2.1.0';
 
 // Rotation angles (current)
 let ux = 0, uy = 0, uz = 0;
@@ -54,6 +54,9 @@ const VIEW_PRESETS = {
 };
 
 let currentView = 'front';
+
+// Depth guide
+let depthGuide = false;
 
 // Background colors
 const BG_DARK = [17, 17, 17];

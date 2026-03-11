@@ -28,6 +28,7 @@ function setupPointerEvents() {
     _canvas.addEventListener('pointerup', onPointerUp);
     _canvas.addEventListener('pointercancel', onPointerUp);
     _canvas.addEventListener('contextmenu', e => e.preventDefault());
+    _canvas.addEventListener('wheel', onWheel, { passive: false });
 
     // Prevent iOS Safari from scrolling/bouncing on touch
     _canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
@@ -223,6 +224,12 @@ function onPointerUp(e) {
   }
 }
 
+function onWheel(e) {
+  e.preventDefault();
+  if (!depthGuide) return;
+  panZ += e.deltaY * 0.5;
+}
+
 // Disable p5 mouse handlers (we use pointer events)
 function mousePressed()  { return false; }
 function mouseDragged()  { return false; }
@@ -390,6 +397,11 @@ function _handleKeyDown() {
     case 'n':
     case 'N':
       newDrawing();
+      break;
+
+    case 'd':
+    case 'D':
+      depthGuide = !depthGuide;
       break;
   }
 

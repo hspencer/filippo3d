@@ -62,6 +62,11 @@ function drawScene() {
 
   pop();
 
+  // Depth guide overlay
+  if (depthGuide) {
+    drawDepthGuide();
+  }
+
   // Marquee selection rectangle (drawn in screen space)
   if (marquee) {
     push();
@@ -198,6 +203,50 @@ function drawReferenceCube() {
   pop();
 }
 
+function drawDepthGuide() {
+  let threshold = 12;
+
+  push();
+  noStroke();
+
+  for (let t of trazos) {
+    for (let i = 0; i < t.points.length; i++) {
+      let sp = t._modelToScreen(t.points[i]);
+      let dz = Math.abs(sp.z);
+
+      // Draw nearby points with fade
+      if (dz < threshold) {
+        let alpha = map(dz, 0, threshold, 200, 30);
+        let sz = map(dz, 0, threshold, 6, 3);
+        fill(0, 210, 255, alpha);
+        ellipse(sp.x - width / 2, sp.y - height / 2, sz, sz);
+      }
+
+      // Interpolated exact crossing points (where segment crosses z=0)
+      if (i < t.points.length - 1) {
+        let sp1 = t._modelToScreen(t.points[i + 1]);
+        if (sp.z * sp1.z < 0) {
+          let param = -sp.z / (sp1.z - sp.z);
+          let ix = sp.x + param * (sp1.x - sp.x);
+          let iy = sp.y + param * (sp1.y - sp.y);
+          fill(0, 210, 255, 255);
+          ellipse(ix - width / 2, iy - height / 2, 8, 8);
+        }
+      }
+    }
+  }
+
+  // Label
+  fill(0, 210, 255, 160);
+  noStroke();
+  textSize(11);
+  textAlign(RIGHT, TOP);
+  textFont('monospace');
+  text('DEPTH GUIDE [D]  scroll: ajustar profundidad', width / 2 - 12, -height / 2 + 12);
+
+  pop();
+}
+
 function drawAxis() {
   if (!showGrid) return;
 
@@ -271,7 +320,7 @@ function exportJSON() {
   let a = document.createElement('a');
   a.href = url;
   let timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  a.download = 'filippo3d-' + timestamp + '.json';
+  a.download = 'filippo3d-' + timestamp + '.f3d';
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -279,7 +328,7 @@ function exportJSON() {
 function importJSON() {
   let input = document.createElement('input');
   input.type = 'file';
-  input.accept = '.json';
+  input.accept = '.f3d,.json';
   input.onchange = (e) => {
     let file = e.target.files[0];
     if (!file) return;

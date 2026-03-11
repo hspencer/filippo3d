@@ -466,3 +466,35 @@ body.light .help-card h2 {
 body.light .help-columns dd {
   color: #777;
 }
+
+/* Open source link */
+.opensource {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 12px;
+  text-align: center;
+}
+
+.opensource a {
+  color: #555;
+  text-decoration: none;
+  font-size: 11px;
+  font-family: monospace;
+  letter-spacing: 0.5px;
+  transition: color 0.15s;
+}
+
+.opensource a:hover {
+  color: #e74c3c;
+}
+
+body.light .opensource {
+  border-top-color: rgba(0, 0, 0, 0.06);
+}
+
+body.light .opensource a {
+  color: #aaa;
+}
+
+body.light .opensource a:hover {
+  color: #e74c3c;
+}
