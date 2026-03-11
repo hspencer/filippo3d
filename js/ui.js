@@ -58,6 +58,21 @@ function setupUI() {
     if (darkMode) toggleTheme();
   });
 
+  // Grid & Depth buttons
+  document.getElementById('btn-grid').addEventListener('click', () => {
+    showGrid = !showGrid;
+    document.getElementById('btn-grid').classList.toggle('active', showGrid);
+  });
+  document.getElementById('btn-depth').addEventListener('click', () => {
+    depthGuide = !depthGuide;
+    document.getElementById('btn-depth').classList.toggle('active', depthGuide);
+  });
+
+  // Help button
+  document.getElementById('btn-help').addEventListener('click', () => {
+    document.getElementById('help-overlay').classList.toggle('hidden');
+  });
+
   // Action buttons
   document.getElementById('btn-undo').addEventListener('click', undo);
   document.getElementById('btn-clear').addEventListener('click', newDrawing);

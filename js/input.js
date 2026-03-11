@@ -50,8 +50,8 @@ function onPointerDown(e) {
   let pos = getPos(e);
   _px = pos.x; _py = pos.y;
   _ppx = pos.x; _ppy = pos.y;
-  currentPressure = e.pressure || 0.5;
   pointerType = e.pointerType || 'mouse';
+  currentPressure = (pointerType === 'pen') ? (e.pressure || 0.5) : 0.5;
 
   // Ignore clicks on UI panel
   let panelOpen = !document.getElementById('panel').classList.contains('collapsed');
@@ -85,7 +85,7 @@ function onPointerMove(e) {
   let dy = pos.y - _py;
   _ppx = _px; _ppy = _py;
   _px = pos.x; _py = pos.y;
-  currentPressure = e.pressure || 0.5;
+  currentPressure = (e.pointerType === 'pen') ? (e.pressure || 0.5) : 0.5;
 
   if (e.buttons === 0) return; // not dragging
 
@@ -230,10 +230,12 @@ function onWheel(e) {
   panZ += e.deltaY * 0.5;
 }
 
-// Disable p5 mouse handlers (we use pointer events)
-function mousePressed()  { return false; }
-function mouseDragged()  { return false; }
-function mouseReleased() { return false; }
+// Disable p5 mouse handlers (we use pointer events).
+// mouseDragged is bound to window by p5, so returning false would
+// call preventDefault() and block UI controls like range sliders.
+function mousePressed(e)  { if (e && e.target === _canvas) return false; }
+function mouseDragged(e)  { if (e && e.target === _canvas) return false; }
+function mouseReleased(e) { if (e && e.target === _canvas) return false; }
 
 function handleClickSelection(sx, sy) {
   let hit = null;
@@ -266,7 +268,9 @@ function _onKeyDown(e) {
   key = e.key;
   keyCode = e.keyCode;
   _metaHeld = e.metaKey || e.ctrlKey;
-  _handleKeyDown();
+  if (_handleKeyDown() === false) {
+    e.preventDefault();
+  }
 }
 
 function _onKeyUp(e) {
@@ -367,6 +371,7 @@ function _handleKeyDown() {
     case 'g':
     case 'G':
       showGrid = !showGrid;
+      document.getElementById('btn-grid').classList.toggle('active', showGrid);
       break;
 
     case 'o':
@@ -402,6 +407,7 @@ function _handleKeyDown() {
     case 'd':
     case 'D':
       depthGuide = !depthGuide;
+      document.getElementById('btn-depth').classList.toggle('active', depthGuide);
       break;
   }
 
