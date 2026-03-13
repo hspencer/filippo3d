@@ -1,5 +1,7 @@
 # Filippo 3D v2.2
 
+![Filippo 3D](og-image.png)
+
 A 3D drawing tool named after [Filippo Brunelleschi](https://en.wikipedia.org/wiki/Filippo_Brunelleschi), the inventor of perspective. Built for teaching — draw on a projected screen with a stylus while your students watch, then rotate and explore the drawing in 3D space.
 
 **[Live demo](https://herbertspencer.net/filippo3d/)**

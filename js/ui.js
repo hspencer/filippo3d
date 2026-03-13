@@ -87,12 +87,12 @@ function setupUI() {
   document.getElementById('btn-save').addEventListener('click', exportJSON);
   document.getElementById('btn-load').addEventListener('click', importJSON);
 
-  // Version label
+  // Initialize feather icons (antes de setear version, para no interferir con el DOM)
+  if (typeof feather !== 'undefined') feather.replace();
+
+  // Version label (después de feather.replace para que no se pierda)
   let vLabel = document.getElementById('version-label');
   if (vLabel) vLabel.textContent = 'v' + VERSION;
-
-  // Initialize feather icons
-  if (typeof feather !== 'undefined') feather.replace();
 }
 
 function togglePanel() {
