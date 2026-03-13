@@ -73,6 +73,13 @@ function setupUI() {
     document.getElementById('help-overlay').classList.toggle('hidden');
   });
 
+  // Cerrar modal de atajos al hacer click fuera de la tarjeta
+  document.getElementById('help-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      e.currentTarget.classList.add('hidden');
+    }
+  });
+
   // Action buttons
   document.getElementById('btn-undo').addEventListener('click', undo);
   document.getElementById('btn-clear').addEventListener('click', newDrawing);

@@ -288,7 +288,6 @@ function setView(viewName) {
     nz = v[2];
     animatingView = true;
     currentView = viewName;
-    freeRotate = false;
     updateViewButtons();
     removeRotateIndicator();
   }

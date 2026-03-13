@@ -402,8 +402,10 @@ body.light kbd {
   border-radius: 12px;
   padding: 28px 36px;
   color: #ccc;
-  max-width: 640px;
-  width: 90%;
+  max-width: 780px;
+  max-height: 90vh;
+  overflow-y: auto;
+  width: 92%;
 }
 
 .help-card h2 {
@@ -414,36 +416,50 @@ body.light kbd {
   letter-spacing: 0.5px;
 }
 
-.help-columns {
+.help-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 32px;
 }
 
-.help-columns h3 {
+.help-grid h3 {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: #e74c3c;
-  margin-bottom: 10px;
+  margin: 16px 0 6px 0;
   font-weight: 600;
 }
 
-.help-columns dl {
+.help-grid h3:first-child {
+  margin-top: 0;
+}
+
+.help-table {
+  width: 100%;
   font-size: 12px;
+  border-collapse: collapse;
 }
 
-.help-columns dt {
-  float: left;
-  clear: left;
-  margin-right: 8px;
-  margin-bottom: 6px;
+.help-table td {
+  padding: 3px 0;
+  vertical-align: top;
+  line-height: 18px;
 }
 
-.help-columns dd {
-  margin: 0 0 6px 0;
+.help-table .help-action {
   color: #999;
-  line-height: 20px;
+  width: 45%;
+  padding-right: 8px;
+}
+
+.help-table tr.help-sub td {
+  font-size: 10px;
+  color: #e74c3c88;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-top: 10px;
+  padding-bottom: 2px;
 }
 
 .help-dismiss {
@@ -463,8 +479,12 @@ body.light .help-card h2 {
   color: #222;
 }
 
-body.light .help-columns dd {
+body.light .help-table .help-action {
   color: #777;
+}
+
+body.light .help-table tr.help-sub td {
+  color: #e74c3caa;
 }
 
 /* Open source link */

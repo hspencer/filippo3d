@@ -99,51 +99,84 @@
   <!-- Help overlay -->
   <div id="help-overlay" class="help-overlay hidden">
     <div class="help-card">
-      <h2>Filippo 3D — Atajos de teclado</h2>
-      <div class="help-columns">
+      <h2>Filippo 3D — Referencia de interacción</h2>
+
+      <div class="help-grid">
+
+        <!-- Columna 1 -->
         <div>
           <h3>Dibujo</h3>
-          <dl>
-            <dt>Click + drag</dt><dd>Dibujo libre</dd>
-            <dt><kbd>Shift</kbd> + drag</dt><dd>Línea recta</dd>
-            <dt><kbd>,</kbd> <kbd>.</kbd></dt><dd>Grosor −/+</dd>
-            <dt><kbd>⌘</kbd><kbd>Z</kbd></dt><dd>Deshacer</dd>
-            <dt><kbd>V</kbd></dt><dd>Dibujo / Selección</dd>
-            <dt><kbd>E</kbd></dt><dd>Borrar selección</dd>
-            <dt><kbd>N</kbd></dt><dd>Nuevo (limpiar todo)</dd>
-          </dl>
+          <table class="help-table">
+            <tr><td class="help-action">Trazo libre</td>           <td>Click + arrastrar</td></tr>
+            <tr><td class="help-action">Línea recta</td>           <td><kbd>Shift</kbd> + arrastrar</td></tr>
+            <tr><td class="help-action">Grosor −/+</td>            <td><kbd>,</kbd> / <kbd>.</kbd></td></tr>
+            <tr><td class="help-action">Deshacer</td>              <td><kbd>⌘</kbd><kbd>Z</kbd></td></tr>
+            <tr><td class="help-action">Borrar selección</td>      <td><kbd>E</kbd></td></tr>
+            <tr><td class="help-action">Nuevo (limpiar todo)</td>   <td><kbd>N</kbd></td></tr>
+          </table>
+
+          <h3>Selección</h3>
+          <table class="help-table">
+            <tr><td class="help-action">Cambiar modo</td>          <td><kbd>V</kbd> o botones del panel</td></tr>
+            <tr><td class="help-action">Seleccionar trazo</td>     <td>Click sobre trazo</td></tr>
+            <tr><td class="help-action">Agregar a selección</td>   <td><kbd>Shift</kbd> + click</td></tr>
+            <tr><td class="help-action">Selección múltiple</td>    <td>Arrastrar rectángulo</td></tr>
+          </table>
+
+          <h3>Transformar selección</h3>
+          <table class="help-table">
+            <tr><td class="help-action">Mover</td>                 <td>Right-click + arrastrar</td></tr>
+            <tr><td class="help-action"></td>                       <td><kbd>Space</kbd> + arrastrar</td></tr>
+            <tr><td class="help-action">Rotar en eje</td>          <td><kbd>X</kbd>/<kbd>Y</kbd>/<kbd>Z</kbd> + arrastrar</td></tr>
+            <tr><td class="help-action">Escalar en eje</td>        <td><kbd>Shift</kbd>+<kbd>X</kbd>/<kbd>Y</kbd>/<kbd>Z</kbd> + arrastrar</td></tr>
+          </table>
         </div>
+
+        <!-- Columna 2 -->
         <div>
           <h3>Navegación 3D</h3>
-          <dl>
-            <dt><kbd>Space</kbd> + drag</dt><dd>Pan (mover origen)</dd>
-            <dt><kbd>Shift</kbd>+<kbd>Space</kbd> + drag</dt><dd>Rotación libre</dd>
-            <dt><kbd>X</kbd>/<kbd>Y</kbd>/<kbd>Z</kbd> + drag</dt><dd>Rotar en eje</dd>
-            <dt><kbd>Shift</kbd>+<kbd>X</kbd>/<kbd>Y</kbd>/<kbd>Z</kbd> + drag</dt><dd>Trasladar en eje</dd>
-            <dt><kbd>F</kbd> <kbd>T</kbd> <kbd>L</kbd> <kbd>R</kbd> <kbd>K</kbd> <kbd>B</kbd></dt><dd>Vistas preset</dd>
-            <dt><kbd>D</kbd></dt><dd>Guía de profundidad</dd>
-            <dt><kbd>D</kbd> + scroll</dt><dd>Ajustar profundidad</dd>
-          </dl>
-        </div>
-        <div>
-          <h3>Con selección</h3>
-          <dl>
-            <dt><kbd>Space</kbd> + drag</dt><dd>Mover selección</dd>
-            <dt><kbd>X</kbd>/<kbd>Y</kbd>/<kbd>Z</kbd> + drag</dt><dd>Rotar en eje</dd>
-            <dt><kbd>Shift</kbd>+<kbd>X</kbd>/<kbd>Y</kbd>/<kbd>Z</kbd> + drag</dt><dd>Escalar en eje</dd>
-          </dl>
+          <table class="help-table">
+            <tr class="help-sub">
+              <td colspan="2">Rotación</td>
+            </tr>
+            <tr><td class="help-action">Rotación libre</td>        <td>Middle-click + arrastrar</td></tr>
+            <tr><td class="help-action"></td>                       <td><kbd>Shift</kbd>+<kbd>Space</kbd> + arrastrar</td></tr>
+            <tr><td class="help-action">Rotar en un eje</td>       <td><kbd>X</kbd>/<kbd>Y</kbd>/<kbd>Z</kbd> + arrastrar</td></tr>
+            <tr class="help-sub">
+              <td colspan="2">Desplazamiento</td>
+            </tr>
+            <tr><td class="help-action">Pan (mover origen)</td>    <td>Right-click + arrastrar</td></tr>
+            <tr><td class="help-action"></td>                       <td><kbd>Space</kbd> + arrastrar</td></tr>
+            <tr><td class="help-action">Trasladar en eje</td>      <td><kbd>Shift</kbd>+<kbd>X</kbd>/<kbd>Y</kbd>/<kbd>Z</kbd> + arrastrar</td></tr>
+            <tr class="help-sub">
+              <td colspan="2">Profundidad (eje Z)</td>
+            </tr>
+            <tr><td class="help-action">Guía de profundidad</td>   <td><kbd>D</kbd></td></tr>
+            <tr><td class="help-action">Ajustar profundidad</td>   <td>Scroll (con guía activa)</td></tr>
+            <tr class="help-sub">
+              <td colspan="2">Vistas predefinidas</td>
+            </tr>
+            <tr><td class="help-action">Frontal</td>                <td><kbd>F</kbd></td></tr>
+            <tr><td class="help-action">Superior / Inferior</td>   <td><kbd>T</kbd> / <kbd>B</kbd></td></tr>
+            <tr><td class="help-action">Izquierda / Derecha</td>   <td><kbd>L</kbd> / <kbd>R</kbd></td></tr>
+            <tr><td class="help-action">Trasera</td>               <td><kbd>K</kbd></td></tr>
+          </table>
+
           <h3>General</h3>
-          <dl>
-            <dt><kbd>G</kbd></dt><dd>Grilla y ejes on/off</dd>
-            <dt><kbd>O</kbd></dt><dd>Ortho / Perspectiva</dd>
-            <dt><kbd>M</kbd></dt><dd>Tema oscuro/claro</dd>
-            <dt><kbd>Tab</kbd></dt><dd>Mostrar/ocultar panel</dd>
-            <dt><kbd>⌘</kbd><kbd>S</kbd></dt><dd>Exportar PNG</dd>
-            <dt><kbd>?</kbd></dt><dd>Esta ayuda</dd>
-          </dl>
+          <table class="help-table">
+            <tr><td class="help-action">Grilla y ejes</td>         <td><kbd>G</kbd></td></tr>
+            <tr><td class="help-action">Ortho / Perspectiva</td>   <td><kbd>O</kbd></td></tr>
+            <tr><td class="help-action">Tema oscuro / claro</td>   <td><kbd>M</kbd></td></tr>
+            <tr><td class="help-action">Mostrar / ocultar panel</td><td><kbd>Tab</kbd></td></tr>
+            <tr><td class="help-action">Exportar PNG</td>          <td><kbd>⌘</kbd><kbd>S</kbd></td></tr>
+            <tr><td class="help-action">Guardar proyecto</td>      <td>Botón en panel</td></tr>
+            <tr><td class="help-action">Cargar proyecto</td>       <td>Botón en panel</td></tr>
+            <tr><td class="help-action">Esta ayuda</td>            <td><kbd>?</kbd></td></tr>
+          </table>
         </div>
+
       </div>
-      <p class="help-dismiss">Presiona cualquier tecla para cerrar</p>
+      <p class="help-dismiss">Presiona cualquier tecla o haz click fuera para cerrar</p>
     </div>
   </div>
 

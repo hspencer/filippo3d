@@ -1,0 +1,11 @@
+.claude
+.vscode
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.DS_Store
+*.vscode

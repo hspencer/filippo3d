@@ -7,6 +7,8 @@ let _ppx = 0, _ppy = 0; // previous pointer position
 let _canvas = null;      // cached canvas reference
 let _pendingMove = null; // throttled pointermove
 let _accumDx = 0, _accumDy = 0; // accumulated deltas for throttled ops
+let _orbitButton = false;  // true cuando se rota con middle-click (orbit)
+let _panButton = false;    // true cuando se hace pan con right-click
 
 // ── Pointer Events (all drawing/interaction input) ──
 
@@ -56,6 +58,25 @@ function onPointerDown(e) {
   // Ignore clicks on UI panel
   let panelOpen = !document.getElementById('panel').classList.contains('collapsed');
   if (panelOpen && pos.x < 220) return;
+
+  // Middle-click (button 1): rotación libre (orbit)
+  // Right-click (button 2): pan, o mover selección si hay trazos seleccionados
+  if (e.button === 1) {
+    _orbitButton = true;
+    interacting = true;
+    cursor('grab');
+    return;
+  }
+  if (e.button === 2) {
+    _panButton = true;
+    interacting = true;
+    let selected = trazos.filter(t => t.selected);
+    if (!drawMode && selected.length > 0) {
+      transformSnapshot = snapshotStrokes(selected);
+    }
+    cursor('move');
+    return;
+  }
 
   // Modifier modes: don't start drawing, but snapshot for undo
   if (spaceHeld || axisHeld) {
@@ -128,6 +149,29 @@ function _processPointerMove() {
   _accumDy = 0;
   let hasSelection = !drawMode && trazos.some(t => t.selected);
 
+  // ── Orbit via middle-click: rotación libre ──
+  if (_orbitButton) {
+    uy -= dx * 0.005;
+    ux -= dy * 0.005;
+    currentView = null;
+    updateViewButtons();
+    return;
+  }
+
+  // ── Pan via right-click: desplazar escena, o mover selección ──
+  if (_panButton) {
+    if (hasSelection) {
+      applyToSelected(t => {
+        let d = screenDeltaToModel(dx, dy);
+        t.translate(d.x, d.y, d.z);
+      });
+    } else {
+      panX += dx;
+      panY += dy;
+    }
+    return;
+  }
+
   // ── Space held: pan/translate ──
   if (spaceHeld) {
     if (hasSelection) {
@@ -179,6 +223,26 @@ function _processPointerMove() {
 
 function onPointerUp(e) {
   e.preventDefault();
+
+  // Liberar orbit mode (middle-click)
+  if (_orbitButton) {
+    _orbitButton = false;
+    interacting = false;
+    cursor(drawMode ? CROSS : ARROW);
+    return;
+  }
+
+  // Liberar pan mode (right-click)
+  if (_panButton) {
+    _panButton = false;
+    interacting = false;
+    if (transformSnapshot) {
+      pushTransformUndo(transformSnapshot);
+      transformSnapshot = null;
+    }
+    cursor(drawMode ? CROSS : ARROW);
+    return;
+  }
 
   if (interacting) {
     interacting = false;
