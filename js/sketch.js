@@ -17,6 +17,24 @@ function setup() {
   // Set initial stroke color based on theme
   strokeColor = darkMode ? '#ffffff' : '#000000';
   syncUIFromState();
+
+  // Load drawing from URL hash (#d=COMPRESSED) if present
+  let hash = location.hash.slice(1);
+  if (hash.startsWith('d=')) {
+    try {
+      let compressed = decodeURIComponent(hash.slice(2));
+      let json = LZString.decompressFromEncodedURIComponent(compressed);
+      if (json) {
+        let data = JSON.parse(json);
+        loadFromJSON(data);
+        syncUIFromState();
+      }
+    } catch (e) {
+      console.error('Error loading from URL:', e);
+    }
+    // Clear hash so it doesn't reload on refresh after editing
+    history.replaceState(null, '', location.pathname);
+  }
 }
 
 function draw() {

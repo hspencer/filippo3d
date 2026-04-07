@@ -98,14 +98,57 @@
       font-size: 11px;
       margin-top: 20px;
     }
-    #copy-data-btn:hover {
-      background: rgba(255,255,255,0.12);
+    .modal-actions {
+      margin-top: 18px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+    .modal-btn {
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 4px;
+      color: #ddd;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .modal-btn:hover {
+      background: rgba(255,255,255,0.18);
       color: #fff;
     }
-    #copy-data-btn.copied {
-      background: rgba(46, 204, 113, 0.25);
-      border-color: rgba(46, 204, 113, 0.5);
-      color: #2ecc71;
+    .modal-btn-primary {
+      background: rgba(238, 43, 0, 0.2);
+      border-color: rgba(238, 43, 0, 0.5);
+      color: #ee2b00;
+    }
+    .modal-btn-primary:hover {
+      background: rgba(238, 43, 0, 0.35);
+      color: #ff4416;
+    }
+    .modal-btn.copied {
+      background: rgba(46, 204, 113, 0.25) !important;
+      border-color: rgba(46, 204, 113, 0.5) !important;
+      color: #2ecc71 !important;
+    }
+    body.light .modal-btn {
+      background: rgba(0,0,0,0.06);
+      border-color: rgba(0,0,0,0.2);
+      color: #444;
+    }
+    body.light .modal-btn:hover {
+      background: rgba(0,0,0,0.12);
+      color: #222;
+    }
+    body.light .modal-btn-primary {
+      background: rgba(238, 43, 0, 0.1);
+      border-color: rgba(238, 43, 0, 0.4);
+      color: #cc2600;
+    }
+    body.light .modal-btn-primary:hover {
+      background: rgba(238, 43, 0, 0.2);
     }
 
     /* Light theme */
@@ -157,18 +200,9 @@
         <tr><td class="action">Claro / Oscuro</td><td><kbd>M</kbd></td></tr>
       </table>
 
-      <div style="margin-top:18px; text-align:center;">
-        <button id="copy-data-btn" style="
-          padding: 6px 16px;
-          background: rgba(255,255,255,0.06);
-          border: 1px solid rgba(255,255,255,0.15);
-          border-radius: 4px;
-          color: #aaa;
-          font-size: 11px;
-          cursor: pointer;
-          font-family: inherit;
-          transition: all 0.15s;
-        ">Copiar data (vista actual)</button>
+      <div class="modal-actions">
+        <button id="copy-data-btn" class="modal-btn">Copiar data</button>
+        <button id="edit-btn" class="modal-btn modal-btn-primary">Editar en Filippo 3D</button>
       </div>
 
       <p class="info-dismiss">Click fuera o <kbd>Escape</kbd> para cerrar</p>

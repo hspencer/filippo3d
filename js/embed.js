@@ -449,6 +449,15 @@ function _setupInfoModal() {
     });
   }
 
+  let editBtn = document.getElementById('edit-btn');
+  if (editBtn) {
+    editBtn.addEventListener('click', () => {
+      let data = _getCurrentData();
+      let base = location.href.replace(/embed\.html.*$/, '');
+      window.open(base + '#d=' + data, '_blank');
+    });
+  }
+
   // Cursor hint when hovering over cube
   let cnv = document.querySelector('canvas');
   if (cnv) {
