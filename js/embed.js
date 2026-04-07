@@ -88,7 +88,12 @@ function draw() {
 
   pop();
 
-  // Reference cube
+  // Reset projection to standard for reference cube (unaffected by zoom)
+  if (useOrtho) {
+    ortho(-width / 2, width / 2, -height / 2, height / 2, -10000, 10000);
+  } else {
+    perspective();
+  }
   drawReferenceCube();
 }
 
@@ -111,11 +116,16 @@ function _setupEmbedInput() {
   // Wheel for zoom
   cnv.addEventListener('wheel', _onWheel, { passive: false });
 
-  // Keyboard
-  window.addEventListener('keydown', _onKeyDown);
-
   // Prevent context menu
   cnv.addEventListener('contextmenu', e => e.preventDefault());
+
+  // Focus management for keyboard inside iframe
+  cnv.setAttribute('tabindex', '0');
+  cnv.style.outline = 'none';
+  cnv.addEventListener('pointerenter', () => cnv.focus());
+  cnv.addEventListener('pointerdown', () => cnv.focus());
+  // Listen keyboard on canvas (not window) for iframe compat
+  cnv.addEventListener('keydown', _onKeyDown);
 }
 
 function _onPointerDown(e) {
