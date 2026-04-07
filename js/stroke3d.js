@@ -191,6 +191,18 @@ class Stroke3D {
     return { x: sx / n, y: sy / n, z: sz / n };
   }
 
+  getBounds() {
+    if (this.points.length === 0) return null;
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    for (let p of this.points) {
+      if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+      if (p.z < minZ) minZ = p.z; if (p.z > maxZ) maxZ = p.z;
+    }
+    return { min: { x: minX, y: minY, z: minZ }, max: { x: maxX, y: maxY, z: maxZ } };
+  }
+
   hitTest(sx, sy, threshold) {
     threshold = threshold || 12;
     for (let p of this.points) {

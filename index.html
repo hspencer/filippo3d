@@ -44,6 +44,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 </head>
 <body>
   <button id="panel-toggle" class="panel-toggle" title="Abrir panel"><i data-feather="menu"></i></button>
@@ -115,6 +116,9 @@
           <button id="btn-save" class="btn" title="Guardar JSON"><i data-feather="save"></i> Save</button>
           <button id="btn-load" class="btn" title="Abrir JSON"><i data-feather="folder"></i> Open</button>
         </div>
+        <div class="btn-group" style="margin-top:4px">
+          <button id="btn-embed" class="btn" title="Incrustar dibujo"><i data-feather="code"></i> Incrustar</button>
+        </div>
       </div>
 
       <div class="section info">
@@ -127,6 +131,30 @@
 
       <div class="section opensource">
         <a href="https://github.com/hspencer/filippo3d" target="_blank" rel="noopener">&lt;opensource&gt;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Embed overlay -->
+  <div id="embed-overlay" class="help-overlay hidden">
+    <div class="help-card embed-card">
+      <div class="embed-header">
+        <h2>Incrustar dibujo</h2>
+        <button id="embed-close" class="panel-close" title="Cerrar">&times;</button>
+      </div>
+      <div id="embed-warning" class="embed-warning hidden">Los datos comprimidos superan 30 KB. El enlace podría no funcionar en todos los navegadores.</div>
+      <div class="embed-section">
+        <label>HTML (iframe)</label>
+        <textarea id="embed-html" readonly rows="3"></textarea>
+        <button id="embed-copy-html" class="btn embed-copy">Copiar</button>
+      </div>
+      <div class="embed-section">
+        <label>Casiopea (widget)</label>
+        <textarea id="embed-casiopea" readonly rows="4"></textarea>
+        <button id="embed-copy-casiopea" class="btn embed-copy">Copiar</button>
+      </div>
+      <div class="embed-actions">
+        <button id="embed-preview" class="btn embed-preview-btn"><i data-feather="external-link"></i> Preview</button>
       </div>
     </div>
   </div>

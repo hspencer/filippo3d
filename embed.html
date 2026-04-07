@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Filippo 3D — Visor</title>
+  <meta name="theme-color" content="#111111">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      overflow: hidden;
+      width: 100%; height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #111;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0; left: 0;
+      z-index: 0;
+      outline: none;
+    }
+
+    /* Info modal */
+    #info-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #info-modal.hidden { display: none; }
+
+    .info-card {
+      background: rgba(30,30,30,0.95);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 28px 32px;
+      color: #ccc;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .info-card h2 {
+      font-size: 16px;
+      font-weight: 400;
+      color: #fff;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+    }
+    .info-card h3 {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #e74c3c;
+      margin: 16px 0 6px 0;
+      font-weight: 600;
+    }
+    .info-card h3:first-of-type { margin-top: 0; }
+    .info-card table {
+      width: 100%;
+      font-size: 12px;
+      border-collapse: collapse;
+    }
+    .info-card td {
+      padding: 3px 0;
+      vertical-align: top;
+      line-height: 18px;
+    }
+    .info-card .action {
+      color: #999;
+      width: 50%;
+      padding-right: 8px;
+    }
+    .info-card kbd {
+      display: inline-block;
+      padding: 1px 5px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 10px;
+      color: #aaa;
+      min-width: 18px;
+      text-align: center;
+      margin-right: 2px;
+    }
+    .info-dismiss {
+      text-align: center;
+      color: #666;
+      font-size: 11px;
+      margin-top: 20px;
+    }
+
+    /* Light theme */
+    body.light { background: #f5f5f0; }
+    body.light .info-card {
+      background: rgba(250,250,248,0.97);
+      border-color: rgba(0,0,0,0.12);
+      color: #444;
+    }
+    body.light .info-card h2 { color: #222; }
+    body.light .info-card .action { color: #777; }
+    body.light .info-card kbd {
+      background: rgba(0,0,0,0.05);
+      border-color: rgba(0,0,0,0.12);
+      color: #666;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+</head>
+<body>
+
+  <!-- Info modal -->
+  <div id="info-modal" class="hidden" role="dialog" aria-modal="true" aria-label="Navegación">
+    <div class="info-card">
+      <h2>Navegación</h2>
+
+      <h3>Ratón</h3>
+      <table>
+        <tr><td class="action">Orbitar (rotar vista)</td><td>Arrastrar</td></tr>
+        <tr><td class="action">Mover (pan)</td><td>Botón derecho + arrastrar</td></tr>
+        <tr><td class="action">Zoom</td><td>Rueda del ratón</td></tr>
+      </table>
+
+      <h3>Táctil</h3>
+      <table>
+        <tr><td class="action">Orbitar</td><td>1 dedo arrastrar</td></tr>
+        <tr><td class="action">Mover y zoom</td><td>2 dedos arrastrar / pellizcar</td></tr>
+      </table>
+
+      <h3>Teclado</h3>
+      <table>
+        <tr><td class="action">Rotar vista</td><td><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td></tr>
+        <tr><td class="action">Zoom</td><td><kbd>+</kbd> / <kbd>-</kbd></td></tr>
+        <tr><td class="action">Reset vista</td><td><kbd>Espacio</kbd></td></tr>
+        <tr><td class="action">Vistas predefinidas</td><td><kbd>F</kbd> <kbd>T</kbd> <kbd>L</kbd> <kbd>R</kbd> <kbd>K</kbd> <kbd>B</kbd></td></tr>
+        <tr><td class="action">Ortho / Perspectiva</td><td><kbd>O</kbd></td></tr>
+        <tr><td class="action">Claro / Oscuro</td><td><kbd>M</kbd></td></tr>
+      </table>
+
+      <p class="info-dismiss">Click fuera o <kbd>Escape</kbd> para cerrar</p>
+    </div>
+  </div>
+
+  <script src="js/variables.js"></script>
+  <script src="js/stroke3d.js"></script>
+  <script src="js/drawing.js"></script>
+  <script src="js/embed.js"></script>
+</body>
+</html>

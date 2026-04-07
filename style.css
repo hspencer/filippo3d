@@ -518,3 +518,111 @@ body.light .opensource a {
 body.light .opensource a:hover {
   color: #e74c3c;
 }
+
+/* Embed modal */
+.embed-card {
+  max-width: 560px;
+}
+
+.embed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.embed-header h2 {
+  margin-bottom: 0;
+}
+
+.embed-header .panel-close {
+  font-size: 20px;
+  line-height: 1;
+  width: 28px;
+  height: 28px;
+}
+
+.embed-section {
+  margin-bottom: 14px;
+}
+
+.embed-section label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.embed-section textarea {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #ccc;
+  font-family: monospace;
+  font-size: 11px;
+  padding: 8px;
+  resize: vertical;
+  outline: none;
+}
+
+.embed-section textarea:focus {
+  border-color: rgba(231, 76, 60, 0.4);
+}
+
+.embed-copy {
+  margin-top: 4px;
+  padding: 4px 12px !important;
+  font-size: 10px !important;
+  flex: none !important;
+}
+
+.embed-copy.copied {
+  background: rgba(46, 204, 113, 0.25) !important;
+  border-color: rgba(46, 204, 113, 0.5) !important;
+  color: #2ecc71 !important;
+}
+
+.embed-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.embed-preview-btn {
+  padding: 8px 20px !important;
+  background: rgba(231, 76, 60, 0.2) !important;
+  border-color: rgba(231, 76, 60, 0.4) !important;
+  color: #e74c3c !important;
+}
+
+.embed-preview-btn:hover {
+  background: rgba(231, 76, 60, 0.35) !important;
+}
+
+.embed-warning {
+  background: rgba(241, 196, 15, 0.15);
+  border: 1px solid rgba(241, 196, 15, 0.3);
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: #f1c40f;
+  font-size: 11px;
+  margin-bottom: 14px;
+}
+
+.embed-warning.hidden {
+  display: none;
+}
+
+/* Light theme embed */
+body.light .embed-section textarea {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #444;
+}
+
+body.light .embed-section textarea:focus {
+  border-color: rgba(231, 76, 60, 0.3);
+}

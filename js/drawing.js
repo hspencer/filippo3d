@@ -93,11 +93,13 @@ function drawScene() {
 }
 
 function drawReferenceCube() {
-  let size = 32;
+  let size = typeof cubeSize !== 'undefined' ? cubeSize : 32;
   // Position: top-left, offset from edge (account for panel)
-  let panelOffset = document.getElementById('panel').classList.contains('collapsed') ? 0 : 220;
-  let cx = -width / 2 + panelOffset + 50;
-  let cy = -height / 2 + 55;
+  let panelEl = document.getElementById('panel');
+  let panelOffset = panelEl ? (panelEl.classList.contains('collapsed') ? 0 : 220) : 0;
+  let margin = typeof CUBE_MARGIN !== 'undefined' ? CUBE_MARGIN : 50;
+  let cx = -width / 2 + panelOffset + margin;
+  let cy = -height / 2 + margin + 5;
 
   push();
   translate(cx, cy, 0);
@@ -110,7 +112,7 @@ function drawReferenceCube() {
   let edgeAlpha = darkMode ? 80 : 100;
   let edgeCol = darkMode ? 255 : 60;
 
-  strokeWeight(0.8);
+  strokeWeight(size * 0.025);
   stroke(edgeCol, edgeAlpha);
 
   // Draw each face manually for control
@@ -173,21 +175,22 @@ function drawReferenceCube() {
   // Draw 'F' calada on front face (z+ plane, visible from both sides)
   let fCol = darkMode ? color(255, 255, 255, 200) : color(40, 40, 40, 200);
   stroke(fCol);
-  strokeWeight(1.8);
+  strokeWeight(size * 0.056);  // scales with cube size
   noFill();
 
   let fl = size * 0.3;  // letter half-height
   let fw = size * 0.2;  // letter half-width
 
-  // F on front (z = s) and back of same face (z = s - 0.5)
-  for (let fz of [s + 0.3, s - 0.3]) {
+  // F on front and back of front face (offset scales with cube size)
+  let fOff = size * 0.025 + 0.5;
+  for (let fz of [s + fOff, s - fOff]) {
     line(-fw, -fl, fz, -fw, fl, fz);                      // vertical |
     line(-fw, -fl, fz, fw, -fl, fz);                      // top —
     line(-fw, -fl * 0.15, fz, fw * 0.6, -fl * 0.15, fz);  // middle —
   }
 
   // Axis color hints on edges (from origin corner -s,-s,-s)
-  strokeWeight(2);
+  strokeWeight(size * 0.0625);
   // X axis edge (red) — runs along x
   stroke(255, 60, 60, 150);
   line(-s, s, s, s, s, s);
@@ -288,8 +291,8 @@ function setView(viewName) {
     nz = v[2];
     animatingView = true;
     currentView = viewName;
-    updateViewButtons();
-    removeRotateIndicator();
+    if (typeof updateViewButtons === 'function') updateViewButtons();
+    if (typeof removeRotateIndicator === 'function') removeRotateIndicator();
   }
 }
 
@@ -298,8 +301,8 @@ function exportPNG() {
   saveCanvas('filippo3d-' + timestamp, 'png');
 }
 
-function exportJSON() {
-  let data = {
+function getDrawingData() {
+  return {
     version: VERSION,
     view: { ux, uy, uz, panX, panY, panZ, useOrtho, darkMode },
     strokes: trazos.map(t => ({
@@ -313,6 +316,10 @@ function exportJSON() {
       }))
     }))
   };
+}
+
+function exportJSON() {
+  let data = getDrawingData();
   let json = JSON.stringify(data, null, 2);
   let blob = new Blob([json], { type: 'application/json' });
   let url = URL.createObjectURL(blob);
@@ -356,10 +363,10 @@ function loadFromJSON(data) {
     panX = data.view.panX || 0; panY = data.view.panY || 0; panZ = data.view.panZ || 0;
     if (data.view.useOrtho !== undefined) {
       useOrtho = data.view.useOrtho;
-      syncProjectionButtons();
+      if (typeof syncProjectionButtons === 'function') syncProjectionButtons();
     }
     if (data.view.darkMode !== undefined && data.view.darkMode !== darkMode) {
-      toggleTheme();
+      if (typeof toggleTheme === 'function') toggleTheme();
     }
   }
 
@@ -374,6 +381,70 @@ function loadFromJSON(data) {
   }
 
   currentView = null;
-  updateViewButtons();
-  updateStatus();
+  if (typeof updateViewButtons === 'function') updateViewButtons();
+  if (typeof updateStatus === 'function') updateStatus();
+}
+
+function zoomExtents() {
+  if (trazos.length === 0) return;
+
+  // Compute combined bounding box in model space
+  let minX = Infinity, minY = Infinity, minZ = Infinity;
+  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+
+  for (let t of trazos) {
+    let b = t.getBounds();
+    if (!b) continue;
+    if (b.min.x < minX) minX = b.min.x; if (b.max.x > maxX) maxX = b.max.x;
+    if (b.min.y < minY) minY = b.min.y; if (b.max.y > maxY) maxY = b.max.y;
+    if (b.min.z < minZ) minZ = b.min.z; if (b.max.z > maxZ) maxZ = b.max.z;
+  }
+
+  if (!isFinite(minX)) return;
+
+  // Center the drawing
+  let cx = (minX + maxX) / 2;
+  let cy = (minY + maxY) / 2;
+  let cz = (minZ + maxZ) / 2;
+
+  // Project bounding box corners to find screen extent
+  updateTrigCache();
+  let { cosX, sinX, cosY, sinY, cosZ, sinZ } = _trig;
+
+  let corners = [
+    [minX, minY, minZ], [maxX, minY, minZ], [minX, maxY, minZ], [maxX, maxY, minZ],
+    [minX, minY, maxZ], [maxX, minY, maxZ], [minX, maxY, maxZ], [maxX, maxY, maxZ]
+  ];
+
+  let sMinX = Infinity, sMaxX = -Infinity, sMinY = Infinity, sMaxY = -Infinity;
+  for (let [px, py, pz] of corners) {
+    // Forward rotation: Rz, Ry, Rx
+    let x1 = cosZ * px - sinZ * py, y1 = sinZ * px + cosZ * py, z1 = pz;
+    let x2 = cosY * x1 + sinY * z1, y2 = y1, z2 = -sinY * x1 + cosY * z1;
+    let x3 = x2, y3 = cosX * y2 - sinX * z2;
+    if (x3 < sMinX) sMinX = x3; if (x3 > sMaxX) sMaxX = x3;
+    if (y3 < sMinY) sMinY = y3; if (y3 > sMaxY) sMaxY = y3;
+  }
+
+  let drawingW = sMaxX - sMinX;
+  let drawingH = sMaxY - sMinY;
+  if (drawingW < 1) drawingW = 1;
+  if (drawingH < 1) drawingH = 1;
+
+  // Scale to fit ~80% of viewport
+  let margin = 0.8;
+  let scale = Math.min((width * margin) / drawingW, (height * margin) / drawingH);
+
+  // Apply: translate all stroke points by -center, then scale
+  for (let t of trazos) {
+    for (let p of t.points) {
+      p.x = (p.x - cx) * scale;
+      p.y = (p.y - cy) * scale;
+      p.z = (p.z - cz) * scale;
+    }
+  }
+
+  panX = 0;
+  panY = 0;
+  panZ = 0;
 }
