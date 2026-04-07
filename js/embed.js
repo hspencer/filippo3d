@@ -14,6 +14,59 @@ let _pointers = new Map();
 let _lastPinchDist = 0;
 let _lastPanCenter = null;
 
+// ── Data loading ──
+
+function _extractData() {
+  // 1. URL hash: #d=COMPRESSED
+  let hash = location.hash.slice(1);
+  if (hash.startsWith('d=')) {
+    console.log('Embed: data source = URL hash');
+    return decodeURIComponent(hash.slice(2));
+  }
+
+  // 2. Query param: ?d=COMPRESSED
+  let params = new URLSearchParams(location.search);
+  let qd = params.get('d');
+  if (qd) {
+    console.log('Embed: data source = query param');
+    return qd;
+  }
+
+  // 3. Inline script: <script>var F3D_DATA = "...";</script> in embed.html
+  if (typeof F3D_DATA !== 'undefined' && F3D_DATA) {
+    console.log('Embed: data source = F3D_DATA global');
+    return F3D_DATA;
+  }
+
+  return null;
+}
+
+function _loadCompressed(compressed) {
+  try {
+    // Clean potential HTML entity encoding from CMS
+    compressed = compressed.replace(/&amp;/g, '&').replace(/&#43;/g, '+');
+
+    let json = LZString.decompressFromEncodedURIComponent(compressed);
+    if (!json) {
+      console.error('Embed: decompression returned null (data length:', compressed.length, ')');
+      return;
+    }
+    let data = JSON.parse(json);
+    // Apply theme before loading
+    if (data.view && data.view.darkMode === false) {
+      darkMode = false;
+      document.body.classList.add('light');
+    }
+    loadFromJSON(data);
+    _embedLoaded = true;
+    _needsZoomExtents = true;
+    console.log('Embed: loaded', trazos.length, 'strokes,',
+      data.view ? (data.view.darkMode ? 'dark' : 'light') : 'default', 'theme');
+  } catch (e) {
+    console.error('Embed: error loading data:', e);
+  }
+}
+
 // ── p5.js setup & draw ──
 
 function setup() {
@@ -22,39 +75,23 @@ function setup() {
   showGrid = false;
   depthGuide = false;
 
-  // Decode drawing from URL hash (#d=...) or query param (?d=...)
-  let compressed = null;
-  let hash = location.hash.slice(1);
-  if (hash.startsWith('d=')) {
-    compressed = hash.slice(2);
-  } else {
-    let params = new URLSearchParams(location.search);
-    compressed = params.get('d');
-  }
+  // Decode drawing data from multiple sources (in priority order)
+  let compressed = _extractData();
 
   if (compressed) {
-    try {
-      let json = LZString.decompressFromEncodedURIComponent(compressed);
-      if (!json) {
-        console.error('Embed: decompression returned null — data may be truncated');
-      } else {
-        let data = JSON.parse(json);
-        // Apply theme before loading (for background)
-        if (data.view && data.view.darkMode === false) {
-          darkMode = false;
-          document.body.classList.add('light');
-        }
-        loadFromJSON(data);
-        _embedLoaded = true;
-        // Defer zoomExtents to first draw when canvas dimensions are ready
-        _needsZoomExtents = true;
-        console.log('Embed: loaded', trazos.length, 'strokes');
-      }
-    } catch (e) {
-      console.error('Embed: error loading data:', e);
-    }
+    _loadCompressed(compressed);
   } else {
-    console.warn('Embed: no data found in URL hash or query params');
+    console.warn('Embed: no data found — listening for postMessage');
+    // Fallback: listen for data from parent window (for CMS widgets)
+    window.addEventListener('message', function handler(e) {
+      if (e.data && typeof e.data === 'string' && e.data.length > 10) {
+        _loadCompressed(e.data);
+        window.removeEventListener('message', handler);
+      } else if (e.data && e.data.f3d) {
+        _loadCompressed(e.data.f3d);
+        window.removeEventListener('message', handler);
+      }
+    });
   }
 
   // Save initial view (will be updated after zoomExtents in first draw)

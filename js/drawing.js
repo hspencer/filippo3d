@@ -437,7 +437,7 @@ function calcExtents(viewportW, viewportH) {
   let x2c = cosY * x1c + sinY * z1c, y2c = y1c;
   let x3c = x2c, y3c = cosX * y2c - sinX * (-sinY * x1c + cosY * z1c);
 
-  let margin = 0.8;
+  let margin = 0.9;
   let zs = Math.min((viewportW * margin) / drawingW, (viewportH * margin) / drawingH);
 
   return {
