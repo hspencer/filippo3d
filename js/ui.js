@@ -1,9 +1,7 @@
 // Filippo 3D - UI panel logic
 
 function setupUI() {
-  // Panel toggle (open) and close buttons
-  document.getElementById('panel-toggle').addEventListener('click', () => openPanel());
-  document.getElementById('panel-close').addEventListener('click', () => closePanel());
+  // Panel is toggled by clicking the reference cube (handled in input.js)
 
   // Color picker
   document.getElementById('stroke-color').addEventListener('input', e => {
@@ -107,12 +105,10 @@ function togglePanel() {
 
 function openPanel() {
   document.getElementById('panel').classList.remove('collapsed');
-  document.getElementById('panel-toggle').classList.remove('panel-closed');
 }
 
 function closePanel() {
   document.getElementById('panel').classList.add('collapsed');
-  document.getElementById('panel-toggle').classList.add('panel-closed');
 }
 
 function updateViewButtons() {

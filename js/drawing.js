@@ -94,116 +94,77 @@ function drawScene() {
 
 function drawReferenceCube() {
   let size = typeof cubeSize !== 'undefined' ? cubeSize : 32;
-  // Position: top-left, offset from edge (account for panel)
+  let s = size / 2;
+
+  // Position: top-left, follows panel with CSS transition offset
   let panelEl = document.getElementById('panel');
   let panelOffset = panelEl ? (panelEl.classList.contains('collapsed') ? 0 : 220) : 0;
-  let margin = typeof CUBE_MARGIN !== 'undefined' ? CUBE_MARGIN : 50;
+  let margin = typeof CUBE_MARGIN !== 'undefined' ? CUBE_MARGIN : 15 + s;
   let cx = -width / 2 + panelOffset + margin;
-  let cy = -height / 2 + margin + 5;
+  let cy = -height / 2 + margin;
+
+  // Store screen position for hit-testing (convert from WEBGL to screen coords)
+  _cubeScreenX = panelOffset + margin;
+  _cubeScreenY = margin;
 
   push();
   translate(cx, cy, 0);
-  rotateX(ux);
-  rotateY(uy);
-  rotateZ(uz);
+  rotateX(ux); rotateY(uy); rotateZ(uz);
 
-  // Cube faces - semi-transparent
-  let faceAlpha = darkMode ? 30 : 20;
-  let edgeAlpha = darkMode ? 80 : 100;
   let edgeCol = darkMode ? 255 : 60;
+  let edgeAlpha = darkMode ? 60 : 70;
 
-  strokeWeight(size * 0.025);
+  // 8 edges of the cube (wireframe)
+  strokeWeight(size * 0.03);
   stroke(edgeCol, edgeAlpha);
-
-  // Draw each face manually for control
-  let s = size / 2;
-
-  // Front face (z+) — the F face, slightly highlighted
-  fill(231, 76, 60, faceAlpha + 25);
-  beginShape();
-  vertex(-s, -s, s);
-  vertex( s, -s, s);
-  vertex( s,  s, s);
-  vertex(-s,  s, s);
-  endShape(CLOSE);
-
-  // Back face (z-)
-  fill(edgeCol, faceAlpha);
-  beginShape();
-  vertex(-s, -s, -s);
-  vertex( s, -s, -s);
-  vertex( s,  s, -s);
-  vertex(-s,  s, -s);
-  endShape(CLOSE);
-
-  // Top face (y-)
-  fill(edgeCol, faceAlpha);
-  beginShape();
-  vertex(-s, -s, -s);
-  vertex( s, -s, -s);
-  vertex( s, -s,  s);
-  vertex(-s, -s,  s);
-  endShape(CLOSE);
-
-  // Bottom face (y+)
-  fill(edgeCol, faceAlpha);
-  beginShape();
-  vertex(-s, s, -s);
-  vertex( s, s, -s);
-  vertex( s, s,  s);
-  vertex(-s, s,  s);
-  endShape(CLOSE);
-
-  // Right face (x+)
-  fill(edgeCol, faceAlpha);
-  beginShape();
-  vertex(s, -s, -s);
-  vertex(s,  s, -s);
-  vertex(s,  s,  s);
-  vertex(s, -s,  s);
-  endShape(CLOSE);
-
-  // Left face (x-)
-  fill(edgeCol, faceAlpha);
-  beginShape();
-  vertex(-s, -s, -s);
-  vertex(-s,  s, -s);
-  vertex(-s,  s,  s);
-  vertex(-s, -s,  s);
-  endShape(CLOSE);
-
-  // Draw 'F' calada on front face (z+ plane, visible from both sides)
-  let fCol = darkMode ? color(255, 255, 255, 200) : color(40, 40, 40, 200);
-  stroke(fCol);
-  strokeWeight(size * 0.056);  // scales with cube size
   noFill();
 
-  let fl = size * 0.3;  // letter half-height
-  let fw = size * 0.2;  // letter half-width
+  // Bottom face edges
+  line(-s, s, -s, s, s, -s); line(s, s, -s, s, s, s);
+  line(s, s, s, -s, s, s);   line(-s, s, s, -s, s, -s);
+  // Top face edges
+  line(-s, -s, -s, s, -s, -s); line(s, -s, -s, s, -s, s);
+  line(s, -s, s, -s, -s, s);   line(-s, -s, s, -s, -s, -s);
+  // Vertical edges
+  line(-s, -s, -s, -s, s, -s); line(s, -s, -s, s, s, -s);
+  line(s, -s, s, s, s, s);     line(-s, -s, s, -s, s, s);
 
-  // F on front and back of front face (offset scales with cube size)
-  let fOff = size * 0.025 + 0.5;
+  // Front face (z+) — translucent white
+  fill(255, 255, 255, darkMode ? 35 : 25);
+  stroke(edgeCol, edgeAlpha);
+  beginShape();
+  vertex(-s, -s, s); vertex(s, -s, s); vertex(s, s, s); vertex(-s, s, s);
+  endShape(CLOSE);
+
+  // Axis color hints on edges
+  strokeWeight(size * 0.06);
+  stroke(255, 60, 60, 150); line(-s, s, s, s, s, s);     // X red
+  stroke(60, 255, 60, 150); line(-s, -s, s, -s, s, s);   // Y green
+  stroke(60, 60, 255, 150); line(-s, s, -s, -s, s, s);   // Z blue
+
+  // 'F' in red, 1px ahead of front face
+  stroke(238, 43, 0, 200);
+  strokeWeight(size * 0.06);
+  noFill();
+
+  let fl = size * 0.3;
+  let fw = size * 0.2;
+  let fOff = 1;
   for (let fz of [s + fOff, s - fOff]) {
-    line(-fw, -fl, fz, -fw, fl, fz);                      // vertical |
-    line(-fw, -fl, fz, fw, -fl, fz);                      // top —
-    line(-fw, -fl * 0.15, fz, fw * 0.6, -fl * 0.15, fz);  // middle —
+    line(-fw, -fl, fz, -fw, fl, fz);
+    line(-fw, -fl, fz, fw, -fl, fz);
+    line(-fw, -fl * 0.15, fz, fw * 0.6, -fl * 0.15, fz);
   }
 
-  // Axis color hints on edges (from origin corner -s,-s,-s)
-  strokeWeight(size * 0.0625);
-  // X axis edge (red) — runs along x
-  stroke(255, 60, 60, 150);
-  line(-s, s, s, s, s, s);
-
-  // Y axis edge (green) — runs along y
-  stroke(60, 255, 60, 150);
-  line(-s, -s, s, -s, s, s);
-
-  // Z axis edge (blue) — runs along z
-  stroke(60, 60, 255, 150);
-  line(-s, s, -s, -s, s, s);
-
   pop();
+}
+
+// Cube screen position for hit-testing (updated each frame by drawReferenceCube)
+let _cubeScreenX = 50, _cubeScreenY = 50;
+
+function isCubeHit(screenX, screenY) {
+  let hit = (typeof cubeSize !== 'undefined' ? cubeSize : 32) / 2 + 10;
+  return Math.abs(screenX - _cubeScreenX) < hit && Math.abs(screenY - _cubeScreenY) < hit;
 }
 
 function drawDepthGuide() {

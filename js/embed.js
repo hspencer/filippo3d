@@ -152,55 +152,55 @@ function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
 
-// ── Embed reference cube (bottom-left, custom style) ──
+// ── Embed reference cube (bottom-left, uses shared style + position override) ──
 
 function _drawEmbedCube() {
   let size = cubeSize;
   let s = size / 2;
-  let cx = -width / 2 + CUBE_MARGIN;
-  let cy = height / 2 - CUBE_MARGIN - 5;  // bottom-left
+  let cx = -width / 2 + CUBE_MARGIN + 5;
+  let cy = height / 2 - CUBE_MARGIN;  // bottom-left
+
+  let edgeCol = darkMode ? 255 : 60;
+  let edgeAlpha = darkMode ? 60 : 70;
 
   push();
   translate(cx, cy, 0);
   rotateX(ux); rotateY(uy); rotateZ(uz);
 
-  // Semi-transparent faces, no colored axis edges
-  let edgeCol = darkMode ? 255 : 60;
-  let faceAlpha = darkMode ? 20 : 15;
-  let edgeAlpha = darkMode ? 50 : 60;
-
-  strokeWeight(size * 0.025);
+  // 8 edges wireframe
+  strokeWeight(size * 0.03);
   stroke(edgeCol, edgeAlpha);
+  noFill();
+  line(-s,s,-s, s,s,-s); line(s,s,-s, s,s,s);
+  line(s,s,s, -s,s,s);   line(-s,s,s, -s,s,-s);
+  line(-s,-s,-s, s,-s,-s); line(s,-s,-s, s,-s,s);
+  line(s,-s,s, -s,-s,s);   line(-s,-s,s, -s,-s,-s);
+  line(-s,-s,-s, -s,s,-s); line(s,-s,-s, s,s,-s);
+  line(s,-s,s, s,s,s);     line(-s,-s,s, -s,s,s);
 
-  // Front face (z+) — white translucent
-  fill(255, 255, 255, darkMode ? 40 : 30);
+  // Front face translucent
+  fill(255, 255, 255, darkMode ? 35 : 25);
+  stroke(edgeCol, edgeAlpha);
   beginShape();
-  vertex(-s, -s, s); vertex(s, -s, s); vertex(s, s, s); vertex(-s, s, s);
+  vertex(-s,-s,s); vertex(s,-s,s); vertex(s,s,s); vertex(-s,s,s);
   endShape(CLOSE);
 
-  // Other faces — subtle
-  fill(edgeCol, faceAlpha);
-  beginShape(); vertex(-s,-s,-s); vertex(s,-s,-s); vertex(s,s,-s); vertex(-s,s,-s); endShape(CLOSE);
-  beginShape(); vertex(-s,-s,-s); vertex(s,-s,-s); vertex(s,-s,s); vertex(-s,-s,s); endShape(CLOSE);
-  beginShape(); vertex(-s,s,-s); vertex(s,s,-s); vertex(s,s,s); vertex(-s,s,s); endShape(CLOSE);
-  beginShape(); vertex(s,-s,-s); vertex(s,s,-s); vertex(s,s,s); vertex(s,-s,s); endShape(CLOSE);
-  beginShape(); vertex(-s,-s,-s); vertex(-s,s,-s); vertex(-s,s,s); vertex(-s,-s,s); endShape(CLOSE);
+  // Axis color hints
+  strokeWeight(size * 0.06);
+  stroke(255, 60, 60, 150); line(-s,s,s, s,s,s);
+  stroke(60, 255, 60, 150); line(-s,-s,s, -s,s,s);
+  stroke(60, 60, 255, 150); line(-s,s,-s, -s,s,s);
 
-  // 'F' in red on front face
+  // F in red, 1px ahead
   stroke(238, 43, 0, 200);
   strokeWeight(size * 0.06);
   noFill();
-
-  let fl = size * 0.3;
-  let fw = size * 0.2;
-  let fOff = size * 0.025 + 0.5;
-  for (let fz of [s + fOff, s - fOff]) {
-    line(-fw, -fl, fz, -fw, fl, fz);
-    line(-fw, -fl, fz, fw, -fl, fz);
-    line(-fw, -fl * 0.15, fz, fw * 0.6, -fl * 0.15, fz);
+  let fl = size * 0.3, fw = size * 0.2;
+  for (let fz of [s + 1, s - 1]) {
+    line(-fw,-fl,fz, -fw,fl,fz);
+    line(-fw,-fl,fz, fw,-fl,fz);
+    line(-fw,-fl*0.15,fz, fw*0.6,-fl*0.15,fz);
   }
-
-  // No colored axis edges (clean embed look)
 
   pop();
 }
@@ -387,8 +387,8 @@ function _invertColor(hex) {
 // ── Info Modal (triggered by clicking reference cube) ──
 
 function _isOverCube(clientX, clientY) {
-  // Cube is at bottom-left: center at (CUBE_MARGIN, height - CUBE_MARGIN - 5)
-  let cx = CUBE_MARGIN, cy = window.innerHeight - CUBE_MARGIN - 5, hit = 24;
+  // Cube bottom-left: center at (CUBE_MARGIN+5, height - CUBE_MARGIN)
+  let cx = CUBE_MARGIN + 5, cy = window.innerHeight - CUBE_MARGIN, hit = 24;
   return clientX >= 0 && clientX <= (cx + hit) &&
          clientY >= (cy - hit) && clientY <= window.innerHeight;
 }

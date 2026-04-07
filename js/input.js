@@ -55,6 +55,12 @@ function onPointerDown(e) {
   pointerType = e.pointerType || 'mouse';
   currentPressure = (pointerType === 'pen') ? (e.pressure || 0.5) : 0.5;
 
+  // Click on reference cube → toggle panel
+  if (e.button === 0 && isCubeHit(pos.x, pos.y)) {
+    togglePanel();
+    return;
+  }
+
   // Ignore clicks on UI panel
   let panelOpen = !document.getElementById('panel').classList.contains('collapsed');
   if (panelOpen && pos.x < 220) return;
@@ -108,7 +114,11 @@ function onPointerMove(e) {
   _px = pos.x; _py = pos.y;
   currentPressure = (e.pointerType === 'pen') ? (e.pressure || 0.5) : 0.5;
 
-  if (e.buttons === 0) return; // not dragging
+  // Cursor: hand over cube, otherwise mode-appropriate
+  if (e.buttons === 0) {
+    _canvas.style.cursor = isCubeHit(pos.x, pos.y) ? 'pointer' : (drawMode ? 'crosshair' : 'default');
+    return;
+  }
 
   // Drawing and marquee: process every event for accuracy
   if (isDrawing && trazoActual && drawMode) {

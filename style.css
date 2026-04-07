@@ -51,38 +51,6 @@ canvas {
   transform: translateX(-220px);
 }
 
-.panel-toggle {
-  position: fixed;
-  top: 88px;
-  left: 36px;
-  z-index: 1001;
-  width: 28px;
-  height: 28px;
-  background: rgba(20, 20, 20, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
-  color: #aaa;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.2s, background 0.15s;
-}
-
-.panel-toggle.panel-closed {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.panel-toggle:not(.panel-closed) {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.panel-toggle:hover {
-  background: rgba(40, 40, 40, 0.95);
-  color: #fff;
-}
 
 .panel-header {
   display: flex;
@@ -95,22 +63,6 @@ canvas {
   margin: 0;
 }
 
-.panel-close {
-  background: none;
-  border: none;
-  color: #aaa;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-}
-
-.panel-close:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
-}
 
 .panel-content {
   padding: 16px 14px;
@@ -345,20 +297,6 @@ body.light .section label {
   color: #888;
 }
 
-body.light .panel-toggle {
-  background: rgba(245, 245, 240, 0.85);
-  border-color: rgba(0, 0, 0, 0.12);
-  color: #666;
-}
-
-body.light .panel-close {
-  color: #666;
-}
-
-body.light .panel-close:hover {
-  color: #222;
-  background: rgba(0, 0, 0, 0.08);
-}
 
 body.light .btn,
 body.light .cube-face {
