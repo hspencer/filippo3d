@@ -5,6 +5,7 @@
 const CUBE_MARGIN = 42;  // cube center offset from edge (no panel)
 var cubeSize = 16;       // half the default size (50%)
 let _embedLoaded = false;
+let _needsZoomExtents = false;
 let _initialView = { ux: 0, uy: 0, uz: 0, panX: 0, panY: 0, panZ: 0 };
 let _zoomScale = 1;
 
@@ -21,13 +22,22 @@ function setup() {
   showGrid = false;
   depthGuide = false;
 
-  // Decode drawing from URL hash
+  // Decode drawing from URL hash (#d=...) or query param (?d=...)
+  let compressed = null;
   let hash = location.hash.slice(1);
   if (hash.startsWith('d=')) {
+    compressed = hash.slice(2);
+  } else {
+    let params = new URLSearchParams(location.search);
+    compressed = params.get('d');
+  }
+
+  if (compressed) {
     try {
-      let compressed = hash.slice(2);
       let json = LZString.decompressFromEncodedURIComponent(compressed);
-      if (json) {
+      if (!json) {
+        console.error('Embed: decompression returned null — data may be truncated');
+      } else {
         let data = JSON.parse(json);
         // Apply theme before loading (for background)
         if (data.view && data.view.darkMode === false) {
@@ -35,16 +45,20 @@ function setup() {
           document.body.classList.add('light');
         }
         loadFromJSON(data);
-        zoomExtents();
         _embedLoaded = true;
+        // Defer zoomExtents to first draw when canvas dimensions are ready
+        _needsZoomExtents = true;
+        console.log('Embed: loaded', trazos.length, 'strokes');
       }
     } catch (e) {
-      console.error('Error loading embed data:', e);
+      console.error('Embed: error loading data:', e);
     }
+  } else {
+    console.warn('Embed: no data found in URL hash or query params');
   }
 
-  // Save initial view for reset
-  _initialView = { ux, uy, uz, panX, panY, panZ };
+  // Save initial view (will be updated after zoomExtents in first draw)
+  _initialView = { ux, uy, uz, panX, panY, panZ, zoomScale: _zoomScale };
 
   // Setup input
   _setupEmbedInput();
@@ -52,6 +66,20 @@ function setup() {
 }
 
 function draw() {
+  // Apply zoomExtents on first frame (canvas dimensions are now valid)
+  if (_needsZoomExtents) {
+    _needsZoomExtents = false;
+    let ext = calcExtents(width, height);
+    if (ext) {
+      panX = ext.panX;
+      panY = ext.panY;
+      panZ = ext.panZ;
+      _zoomScale = ext.zoomScale;
+      // Save as initial view for reset
+      _initialView = { ux, uy, uz, panX, panY, panZ, zoomScale: _zoomScale };
+    }
+  }
+
   // Apply zoom scale via ortho/perspective
   if (useOrtho) {
     let hw = width / (2 * _zoomScale), hh = height / (2 * _zoomScale);
@@ -235,7 +263,7 @@ function _onKeyDown(e) {
       ux = _initialView.ux; uy = _initialView.uy; uz = _initialView.uz;
       nx = ux; ny = uy; nz = uz;
       panX = _initialView.panX; panY = _initialView.panY; panZ = _initialView.panZ;
-      _zoomScale = 1;
+      _zoomScale = _initialView.zoomScale || 1;
       animatingView = false;
       e.preventDefault();
       break;

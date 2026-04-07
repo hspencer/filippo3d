@@ -385,10 +385,12 @@ function loadFromJSON(data) {
   if (typeof updateStatus === 'function') updateStatus();
 }
 
-function zoomExtents() {
-  if (trazos.length === 0) return;
+// Returns { panX, panY, panZ, zoomScale } to frame all strokes.
+// Does NOT mutate stroke data — caller applies via pan and zoom.
+function calcExtents(viewportW, viewportH) {
+  if (trazos.length === 0) return null;
 
-  // Compute combined bounding box in model space
+  // Bounding box in model space
   let minX = Infinity, minY = Infinity, minZ = Infinity;
   let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
 
@@ -400,9 +402,9 @@ function zoomExtents() {
     if (b.min.z < minZ) minZ = b.min.z; if (b.max.z > maxZ) maxZ = b.max.z;
   }
 
-  if (!isFinite(minX)) return;
+  if (!isFinite(minX)) return null;
 
-  // Center the drawing
+  // Center of bounding box
   let cx = (minX + maxX) / 2;
   let cy = (minY + maxY) / 2;
   let cz = (minZ + maxZ) / 2;
@@ -418,10 +420,9 @@ function zoomExtents() {
 
   let sMinX = Infinity, sMaxX = -Infinity, sMinY = Infinity, sMaxY = -Infinity;
   for (let [px, py, pz] of corners) {
-    // Forward rotation: Rz, Ry, Rx
     let x1 = cosZ * px - sinZ * py, y1 = sinZ * px + cosZ * py, z1 = pz;
-    let x2 = cosY * x1 + sinY * z1, y2 = y1, z2 = -sinY * x1 + cosY * z1;
-    let x3 = x2, y3 = cosX * y2 - sinX * z2;
+    let x2 = cosY * x1 + sinY * z1, y2 = y1;
+    let x3 = x2, y3 = cosX * y2 - sinX * (-sinY * x1 + cosY * z1);
     if (x3 < sMinX) sMinX = x3; if (x3 > sMaxX) sMaxX = x3;
     if (y3 < sMinY) sMinY = y3; if (y3 > sMaxY) sMaxY = y3;
   }
@@ -431,20 +432,18 @@ function zoomExtents() {
   if (drawingW < 1) drawingW = 1;
   if (drawingH < 1) drawingH = 1;
 
-  // Scale to fit ~80% of viewport
+  // Projected center of bounding box
+  let x1c = cosZ * cx - sinZ * cy, y1c = sinZ * cx + cosZ * cy, z1c = cz;
+  let x2c = cosY * x1c + sinY * z1c, y2c = y1c;
+  let x3c = x2c, y3c = cosX * y2c - sinX * (-sinY * x1c + cosY * z1c);
+
   let margin = 0.8;
-  let scale = Math.min((width * margin) / drawingW, (height * margin) / drawingH);
+  let zs = Math.min((viewportW * margin) / drawingW, (viewportH * margin) / drawingH);
 
-  // Apply: translate all stroke points by -center, then scale
-  for (let t of trazos) {
-    for (let p of t.points) {
-      p.x = (p.x - cx) * scale;
-      p.y = (p.y - cy) * scale;
-      p.z = (p.z - cz) * scale;
-    }
-  }
-
-  panX = 0;
-  panY = 0;
-  panZ = 0;
+  return {
+    panX: -x3c * zs,
+    panY: -y3c * zs,
+    panZ: 0,
+    zoomScale: zs
+  };
 }
