@@ -47,13 +47,30 @@ function getPos(e) {
   };
 }
 
+function _readPressure(e) {
+  // Use pressure from any device that reports it (pen, Wacom, etc.)
+  // Browsers report 0.5 for mouse clicks with no pressure hardware,
+  // and 0 for hover. Real pressure-sensitive devices report 0 < p <= 1
+  // varying with force. pointerType 'pen' is definitive, but some
+  // Wacom drivers report 'mouse' with valid pressure data.
+  if (e.pointerType === 'pen') {
+    return e.pressure || 0.5;
+  }
+  // For non-pen: if pressure is present and not the mouse default (0.5),
+  // it's likely a pressure-sensitive device
+  if (e.pressure > 0 && e.pressure !== 0.5) {
+    return e.pressure;
+  }
+  return 0.5;
+}
+
 function onPointerDown(e) {
   e.preventDefault();
   let pos = getPos(e);
   _px = pos.x; _py = pos.y;
   _ppx = pos.x; _ppy = pos.y;
   pointerType = e.pointerType || 'mouse';
-  currentPressure = (pointerType === 'pen') ? (e.pressure || 0.5) : 0.5;
+  currentPressure = _readPressure(e);
 
   // Click on reference cube → toggle panel
   if (e.button === 0 && isCubeHit(pos.x, pos.y)) {
@@ -112,7 +129,7 @@ function onPointerMove(e) {
   let dy = pos.y - _py;
   _ppx = _px; _ppy = _py;
   _px = pos.x; _py = pos.y;
-  currentPressure = (e.pointerType === 'pen') ? (e.pressure || 0.5) : 0.5;
+  currentPressure = _readPressure(e);
 
   // Cursor: hand over cube, otherwise mode-appropriate
   if (e.buttons === 0) {
