@@ -440,9 +440,10 @@ function calcExtents(viewportW, viewportH) {
   let margin = 0.9;
   let zs = Math.min((viewportW * margin) / drawingW, (viewportH * margin) / drawingH);
 
+  // Pan centers the drawing; zoom is applied independently via projection
   return {
-    panX: -x3c * zs,
-    panY: -y3c * zs,
+    panX: -x3c,
+    panY: -y3c,
     panZ: 0,
     zoomScale: zs
   };
