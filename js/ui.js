@@ -199,7 +199,7 @@ function openEmbedModal() {
   let embedHeight = _calcEmbedHeight();
 
   // HTML iframe code
-  let iframeCode = '<iframe src="' + _embedURL + '" width="100%" height="' + embedHeight + '" frameborder="0" tabindex="0" style="border:1px solid #333; border-radius:8px;" allowfullscreen></iframe>';
+  let iframeCode = '<iframe src="' + _embedURL + '" width="100%" height="' + embedHeight + '" frameborder="0" tabindex="0" allow="clipboard-write" style="border:1px solid #333; border-radius:8px;" allowfullscreen></iframe>';
 
   // Casiopea widget code (data goes in URL hash via Widget:F3D template)
   let casiopeaCode = '{{#widget:F3D\n|data=' + compressed + '\n|height=' + embedHeight + '\n}}';

@@ -384,6 +384,43 @@ function _invertColor(hex) {
   return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
 }
 
+// ── Clipboard (with iframe fallback) ──
+
+function _copyText(text, btn) {
+  function onSuccess() {
+    let orig = btn.textContent;
+    btn.textContent = '¡Copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
+  }
+
+  // Try modern API first
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(onSuccess).catch(() => {
+      // Fallback for cross-origin iframes
+      _fallbackCopy(text, onSuccess);
+    });
+  } else {
+    _fallbackCopy(text, onSuccess);
+  }
+}
+
+function _fallbackCopy(text, onSuccess) {
+  let ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    onSuccess();
+  } catch (e) {
+    // Last resort: show in a prompt so user can manually copy
+    prompt('Copiar manualmente:', text);
+  }
+  document.body.removeChild(ta);
+}
+
 // ── Info Modal (triggered by clicking reference cube) ──
 
 function _isOverCube(clientX, clientY) {
@@ -408,15 +445,7 @@ function _setupInfoModal() {
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
       let data = _getCurrentData();
-      navigator.clipboard.writeText(data).then(() => {
-        let orig = copyBtn.textContent;
-        copyBtn.textContent = '¡Copiado!';
-        copyBtn.classList.add('copied');
-        setTimeout(() => {
-          copyBtn.textContent = orig;
-          copyBtn.classList.remove('copied');
-        }, 1500);
-      });
+      _copyText(data, copyBtn);
     });
   }
 
