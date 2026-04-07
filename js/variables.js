@@ -1,6 +1,6 @@
 // Filippo 3D - Global State
 
-const VERSION = '2.3';
+const VERSION = '2.4';
 
 // Rotation angles (current)
 let ux = 0, uy = 0, uz = 0;
