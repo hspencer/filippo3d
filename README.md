@@ -1,4 +1,5 @@
-# Filippo 3D v2.2
+# Filippo 3D v2.2 [![Donate using Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/hspencer/donate)
+
 
 ![Filippo 3D](og-image.png)
 
