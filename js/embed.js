@@ -58,6 +58,7 @@ function _loadCompressed(compressed) {
       document.body.classList.add('light');
     }
     loadFromJSON(data);
+    if (data.view && data.view.zoomScale) _zoomScale = data.view.zoomScale;
     _embedLoaded = true;
     console.log('Embed: loaded', trazos.length, 'strokes,',
       data.view ? (data.view.darkMode ? 'dark' : 'light') : 'default', 'theme');
@@ -66,9 +67,10 @@ function _loadCompressed(compressed) {
   }
 }
 
-// Returns the current compressed data string for the current view
+// Returns the current compressed data string including embed zoom
 function _getCurrentData() {
   let data = getDrawingData();
+  data.view.zoomScale = _zoomScale;
   return LZString.compressToEncodedURIComponent(JSON.stringify(data));
 }
 
