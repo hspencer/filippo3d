@@ -98,6 +98,15 @@
       font-size: 11px;
       margin-top: 20px;
     }
+    #copy-data-btn:hover {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+    }
+    #copy-data-btn.copied {
+      background: rgba(46, 204, 113, 0.25);
+      border-color: rgba(46, 204, 113, 0.5);
+      color: #2ecc71;
+    }
 
     /* Light theme */
     body.light { background: #f5f5f0; }
@@ -128,6 +137,7 @@
       <table>
         <tr><td class="action">Orbitar (rotar vista)</td><td>Arrastrar</td></tr>
         <tr><td class="action">Mover (pan)</td><td>Botón derecho + arrastrar</td></tr>
+        <tr><td class="action"></td><td><kbd>Espacio</kbd> + arrastrar</td></tr>
         <tr><td class="action">Zoom</td><td>Rueda del ratón</td></tr>
       </table>
 
@@ -141,11 +151,25 @@
       <table>
         <tr><td class="action">Rotar vista</td><td><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td></tr>
         <tr><td class="action">Zoom</td><td><kbd>+</kbd> / <kbd>-</kbd></td></tr>
-        <tr><td class="action">Reset vista</td><td><kbd>Espacio</kbd></td></tr>
+        <tr><td class="action">Reset vista</td><td><kbd>V</kbd></td></tr>
         <tr><td class="action">Vistas predefinidas</td><td><kbd>F</kbd> <kbd>T</kbd> <kbd>L</kbd> <kbd>R</kbd> <kbd>K</kbd> <kbd>B</kbd></td></tr>
         <tr><td class="action">Ortho / Perspectiva</td><td><kbd>O</kbd></td></tr>
         <tr><td class="action">Claro / Oscuro</td><td><kbd>M</kbd></td></tr>
       </table>
+
+      <div style="margin-top:18px; text-align:center;">
+        <button id="copy-data-btn" style="
+          padding: 6px 16px;
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 4px;
+          color: #aaa;
+          font-size: 11px;
+          cursor: pointer;
+          font-family: inherit;
+          transition: all 0.15s;
+        ">Copiar data (vista actual)</button>
+      </div>
 
       <p class="info-dismiss">Click fuera o <kbd>Escape</kbd> para cerrar</p>
     </div>

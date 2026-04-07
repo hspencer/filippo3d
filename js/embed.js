@@ -3,10 +3,13 @@
 
 // ── State ──
 const CUBE_MARGIN = 15 + 8;  // 15px margin + half cube size
-var cubeSize = 16;       // half the default size (50%)
+const CUBE_BOTTOM = true;    // position cube at bottom-left
+var cubeSize = 16;            // half the default size (50%)
+var embedCubeStyle = true;    // custom cube style for embed
 let _embedLoaded = false;
 let _initialView = { ux: 0, uy: 0, uz: 0, panX: 0, panY: 0, panZ: 0 };
 let _zoomScale = 1;
+let _spaceHeld = false;       // space = pan mode (like main app)
 
 // Pointer tracking
 let _pointers = new Map();
@@ -31,7 +34,7 @@ function _extractData() {
     return qd;
   }
 
-  // 3. Inline script: <script>var F3D_DATA = "...";</script> in embed.html
+  // 3. Inline script: <script>var F3D_DATA = "...";</script>
   if (typeof F3D_DATA !== 'undefined' && F3D_DATA) {
     console.log('Embed: data source = F3D_DATA global');
     return F3D_DATA;
@@ -42,7 +45,6 @@ function _extractData() {
 
 function _loadCompressed(compressed) {
   try {
-    // Clean potential HTML entity encoding from CMS
     compressed = compressed.replace(/&amp;/g, '&').replace(/&#43;/g, '+');
 
     let json = LZString.decompressFromEncodedURIComponent(compressed);
@@ -51,7 +53,6 @@ function _loadCompressed(compressed) {
       return;
     }
     let data = JSON.parse(json);
-    // Apply theme before loading
     if (data.view && data.view.darkMode === false) {
       darkMode = false;
       document.body.classList.add('light');
@@ -65,6 +66,12 @@ function _loadCompressed(compressed) {
   }
 }
 
+// Returns the current compressed data string for the current view
+function _getCurrentData() {
+  let data = getDrawingData();
+  return LZString.compressToEncodedURIComponent(JSON.stringify(data));
+}
+
 // ── p5.js setup & draw ──
 
 function setup() {
@@ -73,14 +80,12 @@ function setup() {
   showGrid = false;
   depthGuide = false;
 
-  // Decode drawing data from multiple sources (in priority order)
   let compressed = _extractData();
 
   if (compressed) {
     _loadCompressed(compressed);
   } else {
     console.warn('Embed: no data found — listening for postMessage');
-    // Fallback: listen for data from parent window (for CMS widgets)
     window.addEventListener('message', function handler(e) {
       if (e.data && typeof e.data === 'string' && e.data.length > 10) {
         _loadCompressed(e.data);
@@ -92,16 +97,14 @@ function setup() {
     });
   }
 
-  // Save initial view (will be updated after zoomExtents in first draw)
   _initialView = { ux, uy, uz, panX, panY, panZ, zoomScale: _zoomScale };
 
-  // Setup input
   _setupEmbedInput();
   _setupInfoModal();
 }
 
 function draw() {
-  // Apply zoom scale via ortho/perspective
+  // Apply zoom scale via projection
   if (useOrtho) {
     let hw = width / (2 * _zoomScale), hh = height / (2 * _zoomScale);
     ortho(-hw, hw, -hh, hh, -10000, 10000);
@@ -111,7 +114,6 @@ function draw() {
     perspective(fov, width / height, 0.1, 20000);
   }
 
-  // Background
   let bg = darkMode ? BG_DARK : BG_LIGHT;
   background(bg[0], bg[1], bg[2]);
 
@@ -137,17 +139,70 @@ function draw() {
 
   pop();
 
-  // Reset projection to standard for reference cube (unaffected by zoom)
+  // Reset projection for reference cube (unaffected by zoom)
   if (useOrtho) {
     ortho(-width / 2, width / 2, -height / 2, height / 2, -10000, 10000);
   } else {
     perspective();
   }
-  drawReferenceCube();
+  _drawEmbedCube();
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+}
+
+// ── Embed reference cube (bottom-left, custom style) ──
+
+function _drawEmbedCube() {
+  let size = cubeSize;
+  let s = size / 2;
+  let cx = -width / 2 + CUBE_MARGIN;
+  let cy = height / 2 - CUBE_MARGIN - 5;  // bottom-left
+
+  push();
+  translate(cx, cy, 0);
+  rotateX(ux); rotateY(uy); rotateZ(uz);
+
+  // Semi-transparent faces, no colored axis edges
+  let edgeCol = darkMode ? 255 : 60;
+  let faceAlpha = darkMode ? 20 : 15;
+  let edgeAlpha = darkMode ? 50 : 60;
+
+  strokeWeight(size * 0.025);
+  stroke(edgeCol, edgeAlpha);
+
+  // Front face (z+) — white translucent
+  fill(255, 255, 255, darkMode ? 40 : 30);
+  beginShape();
+  vertex(-s, -s, s); vertex(s, -s, s); vertex(s, s, s); vertex(-s, s, s);
+  endShape(CLOSE);
+
+  // Other faces — subtle
+  fill(edgeCol, faceAlpha);
+  beginShape(); vertex(-s,-s,-s); vertex(s,-s,-s); vertex(s,s,-s); vertex(-s,s,-s); endShape(CLOSE);
+  beginShape(); vertex(-s,-s,-s); vertex(s,-s,-s); vertex(s,-s,s); vertex(-s,-s,s); endShape(CLOSE);
+  beginShape(); vertex(-s,s,-s); vertex(s,s,-s); vertex(s,s,s); vertex(-s,s,s); endShape(CLOSE);
+  beginShape(); vertex(s,-s,-s); vertex(s,s,-s); vertex(s,s,s); vertex(s,-s,s); endShape(CLOSE);
+  beginShape(); vertex(-s,-s,-s); vertex(-s,s,-s); vertex(-s,s,s); vertex(-s,-s,s); endShape(CLOSE);
+
+  // 'F' in red on front face
+  stroke(238, 43, 0, 200);
+  strokeWeight(size * 0.06);
+  noFill();
+
+  let fl = size * 0.3;
+  let fw = size * 0.2;
+  let fOff = size * 0.025 + 0.5;
+  for (let fz of [s + fOff, s - fOff]) {
+    line(-fw, -fl, fz, -fw, fl, fz);
+    line(-fw, -fl, fz, fw, -fl, fz);
+    line(-fw, -fl * 0.15, fz, fw * 0.6, -fl * 0.15, fz);
+  }
+
+  // No colored axis edges (clean embed look)
+
+  pop();
 }
 
 // ── Embed Input ──
@@ -156,25 +211,20 @@ function _setupEmbedInput() {
   let cnv = document.querySelector('canvas');
   if (!cnv) return;
 
-  // Pointer events
   cnv.addEventListener('pointerdown', _onPointerDown, { passive: false });
   cnv.addEventListener('pointermove', _onPointerMove, { passive: false });
   cnv.addEventListener('pointerup', _onPointerUp, { passive: false });
   cnv.addEventListener('pointercancel', _onPointerUp, { passive: false });
-
-  // Wheel for zoom
   cnv.addEventListener('wheel', _onWheel, { passive: false });
-
-  // Prevent context menu
   cnv.addEventListener('contextmenu', e => e.preventDefault());
 
-  // Focus management for keyboard inside iframe
+  // Focus for keyboard inside iframe
   cnv.setAttribute('tabindex', '0');
   cnv.style.outline = 'none';
   cnv.addEventListener('pointerenter', () => cnv.focus());
   cnv.addEventListener('pointerdown', () => cnv.focus());
-  // Listen keyboard on canvas (not window) for iframe compat
   cnv.addEventListener('keydown', _onKeyDown);
+  cnv.addEventListener('keyup', _onKeyUp);
 }
 
 function _onPointerDown(e) {
@@ -208,8 +258,8 @@ function _onPointerMove(e) {
     let dx = cx - prev.x;
     let dy = cy - prev.y;
 
-    if (prev.button === 2) {
-      // Right-click: pan
+    if (prev.button === 2 || _spaceHeld) {
+      // Right-click or Space+drag: pan
       panX += dx;
       panY += dy;
     } else {
@@ -219,7 +269,6 @@ function _onPointerMove(e) {
       currentView = null;
     }
   } else if (_pointers.size === 2) {
-    // Update this pointer
     _pointers.set(e.pointerId, { x: cx, y: cy, button: prev.button });
     let pts = [..._pointers.values()];
 
@@ -261,13 +310,19 @@ function _onWheel(e) {
 }
 
 function _onKeyDown(e) {
-  // Don't capture when modal is open and Escape closes it
   let modal = document.getElementById('info-modal');
   if (e.key === 'Escape') {
     if (modal && !modal.classList.contains('hidden')) {
       modal.classList.add('hidden');
       return;
     }
+  }
+
+  // Space held = pan mode
+  if (e.key === ' ') {
+    _spaceHeld = true;
+    e.preventDefault();
+    return;
   }
 
   let step = 0.05;
@@ -278,7 +333,7 @@ function _onKeyDown(e) {
     case 'ArrowDown':  ux -= step; currentView = null; e.preventDefault(); break;
     case '+': case '=': _zoomScale *= 1.1; _zoomScale = Math.min(10, _zoomScale); break;
     case '-': case '_': _zoomScale *= 0.9; _zoomScale = Math.max(0.1, _zoomScale); break;
-    case ' ':
+    case 'v': case 'V':
     case 'Home':
       // Reset to initial view
       ux = _initialView.ux; uy = _initialView.uy; uz = _initialView.uz;
@@ -303,20 +358,24 @@ function _onKeyDown(e) {
   }
 }
 
+function _onKeyUp(e) {
+  if (e.key === ' ') {
+    _spaceHeld = false;
+  }
+}
+
 // ── Theme toggle with stroke color inversion ──
 
 function _embedToggleTheme() {
   darkMode = !darkMode;
   document.body.classList.toggle('light', !darkMode);
 
-  // Invert stroke colors to maintain contrast
   for (let t of trazos) {
     t.col = _invertColor(t.col);
   }
 }
 
 function _invertColor(hex) {
-  // Parse hex color and invert RGB channels
   let c = hex.replace('#', '');
   if (c.length === 3) c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2];
   let r = 255 - parseInt(c.substring(0, 2), 16);
@@ -328,23 +387,38 @@ function _invertColor(hex) {
 // ── Info Modal (triggered by clicking reference cube) ──
 
 function _isOverCube(clientX, clientY) {
-  // Reference cube center: x = CUBE_MARGIN, y = CUBE_MARGIN+5
-  // Generous tap target around the cube
-  let cx = CUBE_MARGIN, cy = CUBE_MARGIN + 5, hit = 24;
+  // Cube is at bottom-left: center at (CUBE_MARGIN, height - CUBE_MARGIN - 5)
+  let cx = CUBE_MARGIN, cy = window.innerHeight - CUBE_MARGIN - 5, hit = 24;
   return clientX >= 0 && clientX <= (cx + hit) &&
-         clientY >= 0 && clientY <= (cy + hit);
+         clientY >= (cy - hit) && clientY <= window.innerHeight;
 }
 
 function _setupInfoModal() {
   let modal = document.getElementById('info-modal');
   if (!modal) return;
 
-  // Click outside card to close
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       modal.classList.add('hidden');
     }
   });
+
+  // Copy data button
+  let copyBtn = document.getElementById('copy-data-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      let data = _getCurrentData();
+      navigator.clipboard.writeText(data).then(() => {
+        let orig = copyBtn.textContent;
+        copyBtn.textContent = '¡Copiado!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.textContent = orig;
+          copyBtn.classList.remove('copied');
+        }, 1500);
+      });
+    });
+  }
 
   // Cursor hint when hovering over cube
   let cnv = document.querySelector('canvas');
