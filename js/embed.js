@@ -2,10 +2,9 @@
 // Minimal view-only mode: orbit, pan, zoom, info modal
 
 // ── State ──
-const CUBE_MARGIN = 42;  // cube center offset from edge (no panel)
+const CUBE_MARGIN = 15 + 8;  // 15px margin + half cube size
 var cubeSize = 16;       // half the default size (50%)
 let _embedLoaded = false;
-let _needsZoomExtents = false;
 let _initialView = { ux: 0, uy: 0, uz: 0, panX: 0, panY: 0, panZ: 0 };
 let _zoomScale = 1;
 
@@ -59,7 +58,6 @@ function _loadCompressed(compressed) {
     }
     loadFromJSON(data);
     _embedLoaded = true;
-    _needsZoomExtents = true;
     console.log('Embed: loaded', trazos.length, 'strokes,',
       data.view ? (data.view.darkMode ? 'dark' : 'light') : 'default', 'theme');
   } catch (e) {
@@ -103,20 +101,6 @@ function setup() {
 }
 
 function draw() {
-  // Apply zoomExtents on first frame (canvas dimensions are now valid)
-  if (_needsZoomExtents) {
-    _needsZoomExtents = false;
-    let ext = calcExtents(width, height);
-    if (ext) {
-      panX = ext.panX;
-      panY = ext.panY;
-      panZ = ext.panZ;
-      _zoomScale = ext.zoomScale;
-      // Save as initial view for reset
-      _initialView = { ux, uy, uz, panX, panY, panZ, zoomScale: _zoomScale };
-    }
-  }
-
   // Apply zoom scale via ortho/perspective
   if (useOrtho) {
     let hw = width / (2 * _zoomScale), hh = height / (2 * _zoomScale);
@@ -344,11 +328,11 @@ function _invertColor(hex) {
 // ── Info Modal (triggered by clicking reference cube) ──
 
 function _isOverCube(clientX, clientY) {
-  // Reference cube center in embed: x = CUBE_MARGIN, y = CUBE_MARGIN+5
-  // Hit area generous — comfortable tap target around the cube
-  let cx = CUBE_MARGIN, cy = CUBE_MARGIN + 5, hit = 30;
-  return clientX >= (cx - hit) && clientX <= (cx + hit) &&
-         clientY >= (cy - hit) && clientY <= (cy + hit);
+  // Reference cube center: x = CUBE_MARGIN, y = CUBE_MARGIN+5
+  // Generous tap target around the cube
+  let cx = CUBE_MARGIN, cy = CUBE_MARGIN + 5, hit = 24;
+  return clientX >= 0 && clientX <= (cx + hit) &&
+         clientY >= 0 && clientY <= (cy + hit);
 }
 
 function _setupInfoModal() {
