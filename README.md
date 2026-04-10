@@ -4,7 +4,7 @@
 
 ![Filippo 3D](og-image.png)
 
-Una herramienta de dibujo 3D que lleva el nombre de [Filippo Brunelleschi](https://es.wikipedia.org/wiki/Filippo_Brunelleschi), el inventor de la perspectiva. Pensada para la enseñanza — dibuja sobre una pantalla proyectada con un lápiz óptico mientras tus estudiantes te observan, y luego rota y explora el dibujo en el espacio 3D.
+Una herramienta de dibujo 3D que lleva el nombre de [Filippo Brunelleschi](https://es.wikipedia.org/wiki/Filippo_Brunelleschi), el inventor de la perspectiva, y pensada para el dibujo a mano alzada. Filippo 3D permite dibujar un croquis tridimensional —vistas yuxtapuestas o maquetas de alambre— que se pueden descargar e [incrustar en la wiki Casiopea](https://wiki.ead.pucv.cl/Widget:F3D).
 
 **[Demo en vivo](https://herbertspencer.net/filippo3d/)**
 
