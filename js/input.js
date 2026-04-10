@@ -9,6 +9,7 @@ let _pendingMove = null; // throttled pointermove
 let _accumDx = 0, _accumDy = 0; // accumulated deltas for throttled ops
 let _orbitButton = false;  // true cuando se rota con middle-click (orbit)
 let _panButton = false;    // true cuando se hace pan con right-click
+let cHeld = false;         // true cuando se mantiene presionada C (orbit trackpad-friendly)
 
 // ── Pointer Events (all drawing/interaction input) ──
 
@@ -104,7 +105,7 @@ function onPointerDown(e) {
   }
 
   // Modifier modes: don't start drawing, but snapshot for undo
-  if (spaceHeld || axisHeld) {
+  if (spaceHeld || axisHeld || cHeld) {
     interacting = true;
     let selected = trazos.filter(t => t.selected);
     if (!drawMode && selected.length > 0) {
@@ -183,6 +184,15 @@ function _processPointerMove() {
 
   // ── Orbit via middle-click: rotación libre ──
   if (_orbitButton) {
+    uy -= dx * 0.005;
+    ux -= dy * 0.005;
+    currentView = null;
+    updateViewButtons();
+    return;
+  }
+
+  // ── Orbit via C + drag: trackpad-friendly (spec line 765) ──
+  if (cHeld && !spaceHeld && !axisHeld) {
     uy -= dx * 0.005;
     ux -= dy * 0.005;
     currentView = null;
@@ -411,6 +421,14 @@ function _handleKeyDown() {
   }
 
   let lowerKey = key.toLowerCase();
+
+  // C key: orbit mode (trackpad-friendly, spec line 765)
+  if (!isDrawing && lowerKey === 'c') {
+    cHeld = true;
+    cursor('grab');
+    return;
+  }
+
   if (!isDrawing && (lowerKey === 'x' || lowerKey === 'y' || lowerKey === 'z')) {
     axisHeld = lowerKey;
     cursor('ew-resize');
@@ -536,6 +554,10 @@ function _handleKeyUp() {
     cursor(CROSS);
   }
   let releasedKey = key.toLowerCase();
+  if (releasedKey === 'c') {
+    cHeld = false;
+    cursor(drawMode ? CROSS : ARROW);
+  }
   if (releasedKey === 'x' || releasedKey === 'y' || releasedKey === 'z') {
     if (axisHeld === releasedKey) {
       axisHeld = null;

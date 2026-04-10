@@ -76,7 +76,7 @@ For each user-visible action the audit records:
 
 | # | Action | Primary | Alternatives | Discrete fallback | Consistency | WCAG |
 |---|--------|---------|--------------|---|---|---|
-| 21 | Orbit (free rotation) | middle-click + drag | `Shift + Space` + drag; planned `C + drag` (trackpad-friendly, not yet in code) | None | Editor only | 2.5.7 ⚠ |
+| 21 | Orbit (free rotation) | middle-click + drag | `Shift + Space` + drag; `C + drag` (trackpad-friendly) | None | Editor only | 2.5.7 ⚠ |
 | 22 | Pan | right-click + drag, or `Space` + drag | — | None | Editor only | 2.5.7 ⚠ |
 | 23 | Rotate view around X axis | hold `X` + drag (when nothing selected) | — | None | Editor only | 2.1.4 ⚠ 2.5.7 ⚠ |
 | 24 | Rotate view around Y axis | hold `Y` + drag | — | None | Editor only | 2.1.4 ⚠ 2.5.7 ⚠ |
@@ -171,7 +171,7 @@ These don't fire any action by themselves; they change interpretation of pointer
 | 65 | `X` | rotate view or selection around X (drag), translate with Shift | — | Editor only |
 | 66 | `Y` | rotate around Y | — | Editor only |
 | 67 | `Z` | rotate around Z | — | Editor only |
-| 68 | `C` (planned) | orbit (trackpad-friendly) — not yet in code | — (should also propagate) | Not implemented |
+| 68 | `C` | orbit (trackpad-friendly) | — (not needed, viewer already uses left-click) | Editor only |
 | 69 | `D` | depth mode on while held | — (depth mode not exposed in viewer yet) | Editor only ⚠ |
 
 **Notes.**
@@ -255,7 +255,7 @@ Ordered from "low cost, high accessibility benefit" to "bigger scope":
 
 6. **Unify depth and zoom across surfaces.** Feature unification, not just accessibility. Affects `_zoomScale` in embed.js and depth mode in editor. Medium-large.
 
-7. **Implement `C + drag` orbit in the Editor** (already in spec as planned binding). Small.
+7. ~~**Implement `C + drag` orbit in the Editor**~~ — ✓ Completed 2026-04-10.
 
 8. **Add keyboard-only stroke selection** (Tab-cycle + Enter to toggle). Requires a focus indicator and changes selection model. Large. Also requires #2 (free `Tab`).
 
