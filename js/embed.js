@@ -16,6 +16,13 @@ let _pointers = new Map();
 let _lastPinchDist = 0;
 let _lastPanCenter = null;
 
+// On-demand rendering: stop the p5 loop when nothing requires frames.
+function _embedMaybeStopLoop() {
+  if (animatingView) return;
+  if (_pointers.size > 0) return;
+  noLoop();
+}
+
 // ── Data loading ──
 
 function _extractData() {
@@ -62,6 +69,7 @@ function _loadCompressed(compressed) {
     _embedLoaded = true;
     console.log('Embed: loaded', trazos.length, 'strokes,',
       data.view ? (data.view.darkMode ? 'dark' : 'light') : 'default', 'theme');
+    redraw();
   } catch (e) {
     console.error('Embed: error loading data:', e);
   }
@@ -103,6 +111,8 @@ function setup() {
 
   _setupEmbedInput();
   _setupInfoModal();
+
+  noLoop();
 }
 
 function draw() {
@@ -128,6 +138,7 @@ function draw() {
     } else {
       ux = nx; uy = ny; uz = nz;
       animatingView = false;
+      _embedMaybeStopLoop();
     }
   }
 
@@ -152,6 +163,7 @@ function draw() {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  redraw();
 }
 
 // ── Embed reference cube (bottom-left, uses shared style + position override) ──
@@ -247,6 +259,8 @@ function _onPointerDown(e) {
     _lastPinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
     _lastPanCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
   }
+
+  loop();
 }
 
 function _onPointerMove(e) {
@@ -302,6 +316,8 @@ function _onPointerUp(e) {
     _lastPinchDist = 0;
     _lastPanCenter = null;
   }
+  redraw();
+  _embedMaybeStopLoop();
 }
 
 function _onWheel(e) {
@@ -309,6 +325,7 @@ function _onWheel(e) {
   let delta = e.deltaY > 0 ? 0.9 : 1.1;
   _zoomScale *= delta;
   _zoomScale = Math.max(0.1, Math.min(10, _zoomScale));
+  redraw();
 }
 
 function _onKeyDown(e) {
@@ -327,6 +344,7 @@ function _onKeyDown(e) {
     return;
   }
 
+  let handled = true;
   let step = 0.05;
   switch (e.key) {
     case 'ArrowLeft':  uy += step; currentView = null; e.preventDefault(); break;
@@ -357,7 +375,10 @@ function _onKeyDown(e) {
     case 'l': case 'L': setView('left'); break;
     case 'r': case 'R': setView('right'); break;
     case 'k': case 'K': setView('back'); break;
+    default:
+      handled = false;
   }
+  if (handled) redraw();
 }
 
 function _onKeyUp(e) {
@@ -375,6 +396,7 @@ function _embedToggleTheme() {
   for (let t of trazos) {
     t.col = _invertColor(t.col);
   }
+  redraw();
 }
 
 function _invertColor(hex) {

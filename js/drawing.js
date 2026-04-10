@@ -1,5 +1,17 @@
 // Filippo 3D - Drawing & 3D scene rendering
 
+// On-demand rendering: stops the p5 loop whenever no interaction,
+// animation, or panel transition requires continuous frames.
+function maybeStopLoop() {
+  if (animatingView) return;
+  if (isDrawing) return;
+  if (interacting) return;
+  if (_orbitButton || _panButton) return;
+  if (marquee) return;
+  if (_panelAnimating) return;
+  noLoop();
+}
+
 function drawScene() {
   updateTrigCache();
 
@@ -34,7 +46,10 @@ function drawScene() {
       uz = nz;
     }
 
-    if (done) animatingView = false;
+    if (done) {
+      animatingView = false;
+      maybeStopLoop();
+    }
   }
 
   push();
@@ -254,6 +269,7 @@ function setView(viewName) {
     currentView = viewName;
     if (typeof updateViewButtons === 'function') updateViewButtons();
     if (typeof removeRotateIndicator === 'function') removeRotateIndicator();
+    loop();
   }
 }
 
@@ -344,6 +360,7 @@ function loadFromJSON(data) {
   currentView = null;
   if (typeof updateViewButtons === 'function') updateViewButtons();
   if (typeof updateStatus === 'function') updateStatus();
+  redraw();
 }
 
 // Returns { panX, panY, panZ, zoomScale } to frame all strokes.

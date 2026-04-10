@@ -6,6 +6,8 @@ function setupUI() {
   // Color picker
   document.getElementById('stroke-color').addEventListener('input', e => {
     strokeColor = e.target.value;
+    // No redraw: color only applies to future strokes; existing scene
+    // is unchanged.
   });
 
   // Stroke weight slider
@@ -13,6 +15,7 @@ function setupUI() {
   weightSlider.addEventListener('input', e => {
     strokeW = parseFloat(e.target.value);
     document.getElementById('weight-val').textContent = strokeW;
+    // No redraw: stroke weight only applies to future strokes.
   });
 
   // Mode buttons
@@ -22,6 +25,7 @@ function setupUI() {
     cursor(CROSS);
     document.getElementById('btn-draw').classList.add('active');
     document.getElementById('btn-select').classList.remove('active');
+    redraw();
   });
 
   document.getElementById('btn-select').addEventListener('click', () => {
@@ -29,16 +33,19 @@ function setupUI() {
     cursor(ARROW);
     document.getElementById('btn-draw').classList.remove('active');
     document.getElementById('btn-select').classList.add('active');
+    redraw();
   });
 
   // Projection buttons
   document.getElementById('btn-persp').addEventListener('click', () => {
     useOrtho = false;
     syncProjectionButtons();
+    redraw();
   });
   document.getElementById('btn-ortho').addEventListener('click', () => {
     useOrtho = true;
     syncProjectionButtons();
+    redraw();
   });
 
   // View buttons
@@ -60,10 +67,12 @@ function setupUI() {
   document.getElementById('btn-grid').addEventListener('click', () => {
     showGrid = !showGrid;
     document.getElementById('btn-grid').classList.toggle('active', showGrid);
+    redraw();
   });
   document.getElementById('btn-depth').addEventListener('click', () => {
     depthGuide = !depthGuide;
     document.getElementById('btn-depth').classList.toggle('active', depthGuide);
+    redraw();
   });
 
   // Help button
@@ -105,10 +114,23 @@ function togglePanel() {
 
 function openPanel() {
   document.getElementById('panel').classList.remove('collapsed');
+  _panelSlideStart();
 }
 
 function closePanel() {
   document.getElementById('panel').classList.add('collapsed');
+  _panelSlideStart();
+}
+
+// Drive continuous rendering during the panel's CSS slide transition
+// so the reference cube follows smoothly instead of snapping.
+function _panelSlideStart() {
+  _panelAnimating = true;
+  loop();
+  setTimeout(() => {
+    _panelAnimating = false;
+    if (typeof maybeStopLoop === 'function') maybeStopLoop();
+  }, 320);
 }
 
 function updateViewButtons() {

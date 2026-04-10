@@ -28,6 +28,9 @@ let shiftHeld = false;     // straight line / modifier
 let axisHeld = null;       // 'x', 'y', or 'z' for axis-constrained ops
 let interacting = false;   // true while dragging in a modifier mode
 
+// On-demand rendering helpers
+let _panelAnimating = false;  // true during the CSS slide of the side panel
+
 // Marquee selection
 let marquee = null;        // { x0, y0, x1, y1 } while dragging, null otherwise
 

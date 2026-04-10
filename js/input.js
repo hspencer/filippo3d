@@ -88,6 +88,7 @@ function onPointerDown(e) {
     _orbitButton = true;
     interacting = true;
     cursor('grab');
+    loop();
     return;
   }
   if (e.button === 2) {
@@ -98,6 +99,7 @@ function onPointerDown(e) {
       transformSnapshot = snapshotStrokes(selected);
     }
     cursor('move');
+    loop();
     return;
   }
 
@@ -108,6 +110,7 @@ function onPointerDown(e) {
     if (!drawMode && selected.length > 0) {
       transformSnapshot = snapshotStrokes(selected);
     }
+    loop();
     return;
   }
 
@@ -117,8 +120,10 @@ function onPointerDown(e) {
     trazoActual = new Stroke3D(strokeColor, strokeW);
     trazoActual.addPoint(x, y, 0, currentPressure);
     isDrawing = true;
+    loop();
   } else {
     marquee = { x0: pos.x, y0: pos.y, x1: pos.x, y1: pos.y };
+    loop();
   }
 }
 
@@ -256,6 +261,8 @@ function onPointerUp(e) {
     _orbitButton = false;
     interacting = false;
     cursor(drawMode ? CROSS : ARROW);
+    redraw();
+    maybeStopLoop();
     return;
   }
 
@@ -268,6 +275,8 @@ function onPointerUp(e) {
       transformSnapshot = null;
     }
     cursor(drawMode ? CROSS : ARROW);
+    redraw();
+    maybeStopLoop();
     return;
   }
 
@@ -277,6 +286,8 @@ function onPointerUp(e) {
       pushTransformUndo(transformSnapshot);
       transformSnapshot = null;
     }
+    redraw();
+    maybeStopLoop();
     return;
   }
 
@@ -313,12 +324,16 @@ function onPointerUp(e) {
     }
     marquee = null;
   }
+
+  redraw();
+  maybeStopLoop();
 }
 
 function onWheel(e) {
   e.preventDefault();
   if (!depthGuide) return;
   panZ += e.deltaY * 0.5;
+  redraw();
 }
 
 // Disable p5 mouse handlers (we use pointer events).
@@ -463,12 +478,14 @@ function _handleKeyDown() {
     case 'G':
       showGrid = !showGrid;
       document.getElementById('btn-grid').classList.toggle('active', showGrid);
+      redraw();
       break;
 
     case 'o':
     case 'O':
       useOrtho = !useOrtho;
       syncProjectionButtons();
+      redraw();
       break;
 
     case 'v':
@@ -478,6 +495,7 @@ function _handleKeyDown() {
       cursor(drawMode ? CROSS : ARROW);
       document.getElementById('btn-draw').classList.toggle('active', drawMode);
       document.getElementById('btn-select').classList.toggle('active', !drawMode);
+      redraw();
       break;
 
     case 'e':
@@ -499,6 +517,7 @@ function _handleKeyDown() {
     case 'D':
       depthGuide = !depthGuide;
       document.getElementById('btn-depth').classList.toggle('active', depthGuide);
+      redraw();
       break;
   }
 
@@ -550,6 +569,7 @@ function undo() {
   }
 
   updateStatus();
+  redraw();
 }
 
 function eraseSelected() {
@@ -564,6 +584,7 @@ function eraseSelected() {
     undoStack.push({ type: 'delete', entries });
   }
   updateStatus();
+  redraw();
 }
 
 // ── Undo helpers ──
@@ -605,6 +626,7 @@ function newDrawing() {
   cursor(CROSS);
   updateViewButtons();
   updateStatus();
+  redraw();
 }
 
 function toggleTheme() {
@@ -624,6 +646,7 @@ function toggleTheme() {
     btnDark.classList.toggle('active', darkMode);
     btnLight.classList.toggle('active', !darkMode);
   }
+  redraw();
 }
 
 // ── Rotate indicator ──
@@ -673,4 +696,5 @@ function screenDeltaToModel(dx, dy) {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  redraw();
 }

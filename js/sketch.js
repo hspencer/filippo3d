@@ -35,6 +35,8 @@ function setup() {
     // Clear hash so it doesn't reload on refresh after editing
     history.replaceState(null, '', location.pathname);
   }
+
+  noLoop();
 }
 
 function draw() {
