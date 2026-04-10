@@ -1,0 +1,876 @@
+-- allium: 3
+-- filippo3d.allium
+
+-- ============================================================
+-- Scope
+--
+-- Filippo 3D is a sketching tool where the user draws on a
+-- moving 3D canvas. Each stroke is captured on the current
+-- view plane (z = 0 in view-local coordinates) and persists
+-- in 3D model space, determined by the Viewpoint active at
+-- the moment of capture. The canvas can be freely rotated and
+-- panned before, during and after drawing.
+--
+-- Includes:
+--   - Stroke placement on the view plane with 3D persistence
+--   - Viewpoint manipulation (orbit, pan, depth, presets, projection)
+--   - Selection and collective transformation of committed strokes
+--   - Undo and redo with forward/backward history navigation
+--   - Persistence: .f3d (JSON), PNG export, DXF export
+--   - Embed generation: iframe HTML and Casiopea widget formats
+--   - Editor and Viewer surfaces (single actor, two access modes)
+--   - Keyboard bindings as part of the product contract
+--
+-- Excludes:
+--   - Editing individual points inside a committed stroke
+--   - Concurrent multi-user editing or real-time collaboration
+--   - Auto-save, cloud sync, user accounts, authentication
+--   - Rendering engine, input API, UI widget library (implementation)
+--   - WCAG-AA transversal audit (deferred to a later refinement pass)
+--
+-- Integrations (in-scope):
+--   - Casiopea wiki — first-class embed target via {{#widget:F3D}}
+--   - Generic iframe HTML — secondary embed format
+--   - .f3d file format (JSON) — save / load
+--   - PNG export — visual snapshot
+--   - DXF export — 3D CAD interchange (polyline-only, no pressure)
+--   - URL hash — shareable links (LZString-compressed payload)
+--   - postMessage — cross-origin data injection into the viewer
+--
+-- Status: initial draft from elicitation session. Some decisions
+--         are forward-looking and not yet implemented in code
+--         (C+drag orbit, DXF export, depth unification, redo,
+--         theme invert in editor, panel depth controls).
+-- ============================================================
+
+
+------------------------------------------------------------
+-- Value Types
+------------------------------------------------------------
+
+value Vec3 {
+    x: Decimal
+    y: Decimal
+    z: Decimal
+}
+
+value Rotation {
+    ux: Decimal
+    uy: Decimal
+    uz: Decimal
+}
+
+value Color {
+    hex: String
+}
+
+value Point {
+    position: Vec3
+    pressure: Decimal
+}
+
+
+------------------------------------------------------------
+-- Enumerations
+------------------------------------------------------------
+
+enum ViewPreset { front | top | bottom | left | right | back }
+
+enum Projection { orthographic | perspective }
+
+enum InteractionMode { draw | select }
+
+enum Theme { dark | light }
+
+enum EmbedFormat { iframe_html | casiopea_widget }
+
+enum UndoKind { add_stroke | delete_strokes | transform_strokes }
+
+
+------------------------------------------------------------
+-- Entities and Variants
+------------------------------------------------------------
+
+entity Stroke {
+    color: Color
+    weight: Decimal
+    points: List<Point>
+    state: being_drawn | committed | discarded
+    selected: Boolean
+
+    transitions state {
+        being_drawn -> committed
+        being_drawn -> discarded
+        terminal: committed, discarded
+    }
+
+    invariant CommittedStrokeHasAtLeastTwoPoints {
+        state = committed implies points.count >= 2
+    }
+
+    @invariant StrokePointsAreDistinct
+        -- Consecutive points in a Stroke are separated by at least
+        -- config.min_point_distance. This is enforced at capture
+        -- time by PointAppendedDuringDrawing: samples that fall
+        -- within the threshold of the last appended point are
+        -- silently discarded. Pairwise assertion over List<Point>
+        -- is expressed procedurally rather than as a static
+        -- invariant because Allium's current quantification over
+        -- ordered list adjacency is awkward; the rule is the
+        -- authoritative enforcement point.
+}
+
+entity Viewpoint {
+    -- The state of the 3D canvas: where the user is looking from
+    -- and how. The Viewpoint is what makes "the canvas move".
+
+    rotation: Rotation
+    pan: Vec3
+    projection: Projection
+    depth: Decimal
+    depth_mode_active: Boolean
+
+    -- Derived
+    is_at_preset(p): rotation = preset_rotation(p)
+}
+
+entity Drawing {
+    -- The container for everything the user is working on:
+    -- the strokes, the viewpoint, the session-level modes and
+    -- the undo/redo history.
+
+    strokes: List<Stroke>
+    viewpoint: Viewpoint
+    interaction_mode: InteractionMode
+    theme: Theme
+
+    current_color: Color
+    current_weight: Decimal
+
+    history: List<UndoEntry>
+    history_head: Integer
+
+    -- Derived
+    is_empty: strokes.count = 0
+    can_undo: history_head > 0
+    can_redo: history_head < history.count
+    has_active_stroke: strokes.any(s => s.state = being_drawn)
+
+    invariant HistoryHeadInBounds {
+        history_head >= 0 and history_head <= history.count
+    }
+
+    invariant AtMostOneActiveStroke {
+        strokes.any(s => s.state = being_drawn) implies
+            strokes.count(s => s.state = being_drawn) <= 1
+    }
+}
+
+entity UndoEntry {
+    -- An entry in the Drawing's history. Represents one reversible
+    -- action. The payload needed to reverse the action is captured
+    -- at rule fire time; it is not modelled field-by-field here
+    -- because the exact shape depends on the kind.
+    drawing: Drawing
+    kind: UndoKind
+    created_at: Timestamp
+}
+
+entity Selection {
+    -- The set of strokes currently selected. Session-local: there
+    -- is at most one active Selection per Drawing, even though
+    -- Allium has no first-class way to enforce that.
+    drawing: Drawing
+    strokes: Set<Stroke>
+
+    invariant SelectionStrokesAreCommitted {
+        for s in strokes: s.state = committed
+    }
+}
+
+entity Embed {
+    -- An immutable snapshot of a Drawing at the moment CreateEmbed
+    -- was invoked. Includes the strokes, the Viewpoint, and the
+    -- session settings relevant for rendering (theme).
+
+    snapshot_strokes: List<Stroke>
+    snapshot_viewpoint: Viewpoint
+    snapshot_theme: Theme
+    formats: Set<EmbedFormat>
+    created_at: Timestamp
+
+    @invariant Immutability
+        -- Once created, an Embed does not observe modifications to
+        -- the source Drawing. The snapshot it holds is frozen. Any
+        -- subsequent change to the source Drawing produces no
+        -- update in previously created Embeds.
+}
+
+
+------------------------------------------------------------
+-- Config
+------------------------------------------------------------
+
+config {
+    min_point_distance: Decimal = 1.5
+    -- Pixels. Points sampled within this distance of the previous
+    -- point in an in-progress stroke are silently discarded at
+    -- capture time, preventing accumulation of identical or
+    -- near-identical points when the stylus is held still.
+
+    stroke_weight_min: Decimal = 0.5
+    stroke_weight_max: Decimal = 20.0
+    stroke_weight_step: Decimal = 0.5
+}
+
+
+------------------------------------------------------------
+-- Rules
+------------------------------------------------------------
+
+-- ── Stroke capture ──────────────────────────────────────────
+
+rule StrokeStarts {
+    when: StartStroke(drawing, initial_point)
+    requires:
+        drawing.interaction_mode = draw
+        not drawing.has_active_stroke
+    ensures:
+        Stroke.created(
+            color: drawing.current_color,
+            weight: drawing.current_weight,
+            points: [initial_point],
+            state: being_drawn,
+            selected: false
+        )
+}
+
+rule PointAppendedDuringDrawing {
+    when: AppendPoint(stroke, sample)
+    requires:
+        stroke.state = being_drawn
+        distance(sample.position, stroke.points.last.position)
+            >= config.min_point_distance
+    ensures:
+        stroke.points = stroke.points + [sample]
+
+    @guidance
+        -- Samples failing the distance requirement are silently
+        -- dropped. This is the authoritative enforcement point
+        -- of StrokePointsAreDistinct.
+}
+
+rule StrokeCommits {
+    when: FinishStroke(stroke)
+    requires:
+        stroke.state = being_drawn
+        stroke.points.count >= 2
+    ensures:
+        stroke.state = committed
+        UndoEntry.created(
+            drawing: stroke.drawing,
+            kind: add_stroke,
+            created_at: now
+        )
+
+    @guidance
+        -- On commit, the implementation may apply a lossless
+        -- simplification pass (e.g., Douglas-Peucker) to reduce
+        -- point count without visible change. That is an
+        -- implementation optimisation, not a domain requirement.
+}
+
+rule StrokeDiscardedTooShort {
+    when: FinishStroke(stroke)
+    requires:
+        stroke.state = being_drawn
+        stroke.points.count < 2
+    ensures:
+        stroke.state = discarded
+}
+
+rule StrokeCancelledByUndoDuringDrawing {
+    when: Undo(drawing)
+    requires: drawing.has_active_stroke
+    ensures:
+        -- Undo while drawing cancels the in-progress stroke
+        -- without touching the prior history.
+        for s in drawing.strokes where s.state = being_drawn:
+            s.state = discarded
+}
+
+-- ── Straight-line drawing (Shift modifier) ─────────────────
+
+@invariant StraightLineUsesOnlyFirstAndLastSample
+    -- When the user holds the Shift modifier during drawing, the
+    -- stroke retains only its first point and its most recent
+    -- sample; intermediate samples are discarded. The result is a
+    -- straight segment between the anchor and the pointer.
+
+-- ── Undo / redo ─────────────────────────────────────────────
+
+rule Undo {
+    when: Undo(drawing)
+    requires:
+        not drawing.has_active_stroke
+        drawing.can_undo
+    ensures:
+        drawing.history_head = drawing.history_head - 1
+
+    @guidance
+        -- The implementation restores the prior state by reversing
+        -- the action at history[history_head - 1] (remove added
+        -- stroke, re-insert deleted strokes, restore pre-transform
+        -- coordinates). State reconstruction is implementation.
+}
+
+rule Redo {
+    when: Redo(drawing)
+    requires:
+        not drawing.has_active_stroke
+        drawing.can_redo
+    ensures:
+        drawing.history_head = drawing.history_head + 1
+}
+
+rule NewActionTruncatesRedoTail {
+    when: UndoEntry.created(drawing: drawing, kind: _, created_at: _)
+    requires: drawing.history_head < drawing.history.count
+    ensures:
+        -- Any entries past the current head are discarded. The new
+        -- entry becomes the most recent, and head advances to the
+        -- new tail.
+        drawing.history = drawing.history[0..drawing.history_head]
+            + [new_entry]
+        drawing.history_head = drawing.history_head + 1
+}
+
+-- ── Selection and transformation ───────────────────────────
+
+rule SelectStroke {
+    when: SelectStroke(drawing, stroke)
+    requires:
+        drawing.interaction_mode = select
+        stroke.state = committed
+    ensures:
+        stroke.selected = true
+}
+
+rule TransformSelection {
+    when: TransformSelection(drawing, transformation)
+    requires: drawing.interaction_mode = select
+    ensures:
+        for s in drawing.strokes where s.selected:
+            s.points = apply_transform(s.points, transformation)
+        UndoEntry.created(
+            drawing: drawing,
+            kind: transform_strokes,
+            created_at: now
+        )
+}
+
+rule EraseSelection {
+    when: EraseSelection(drawing)
+    requires: drawing.interaction_mode = select
+    ensures:
+        UndoEntry.created(
+            drawing: drawing,
+            kind: delete_strokes,
+            created_at: now
+        )
+        for s in drawing.strokes where s.selected:
+            not exists s
+}
+
+-- ── Persistence ─────────────────────────────────────────────
+
+rule NewDrawing {
+    when: NewDrawing(drawing)
+    requires:
+        drawing.is_empty or UserConfirmedDiscard(drawing)
+    ensures:
+        drawing.strokes = []
+        drawing.history = []
+        drawing.history_head = 0
+        drawing.viewpoint = default_viewpoint()
+
+    @guidance
+        -- The implementation must prompt for confirmation if the
+        -- drawing has strokes, honouring Q9. If empty, the action
+        -- proceeds without prompting.
+}
+
+rule LoadDrawing {
+    when: LoadDrawing(drawing, source)
+    requires:
+        drawing.is_empty or UserConfirmedDiscard(drawing)
+    ensures:
+        -- Load always replaces the entire Drawing. Merge is out of
+        -- scope.
+        drawing.strokes = parsed_strokes(source)
+        drawing.viewpoint = parsed_viewpoint(source)
+        drawing.history = []
+        drawing.history_head = 0
+}
+
+rule SaveDrawing {
+    when: SaveDrawing(drawing)
+    ensures:
+        File.created(
+            format: f3d_json,
+            content: serialize_f3d(drawing)
+        )
+}
+
+rule ExportPNG {
+    when: ExportPNG(drawing)
+    ensures:
+        File.created(
+            format: png,
+            content: render_png(drawing, drawing.viewpoint, drawing.theme)
+        )
+
+    @guidance
+        -- The PNG captures the current view as shown on screen,
+        -- using the current theme. This is a one-shot snapshot
+        -- and does not alter the Drawing.
+}
+
+rule ExportDXF {
+    when: ExportDXF(drawing)
+    requires: not drawing.is_empty
+    ensures:
+        File.created(
+            format: dxf,
+            content: serialize_dxf(drawing.strokes)
+        )
+
+    @guidance
+        -- Each Stroke is mapped to a single 3D polyline with its
+        -- base color and weight. Per-point pressure is NOT
+        -- preserved in DXF output. Point coordinates are exported
+        -- in model space (not view space).
+}
+
+-- ── Embed creation ──────────────────────────────────────────
+
+rule CreateEmbed {
+    when: CreateEmbed(drawing)
+    requires: drawing.strokes.count >= 1
+    ensures:
+        Embed.created(
+            snapshot_strokes: drawing.strokes,
+            snapshot_viewpoint: drawing.viewpoint,
+            snapshot_theme: drawing.theme,
+            formats: { iframe_html, casiopea_widget },
+            created_at: now
+        )
+
+    @guidance
+        -- The embed captures the Drawing as it is at this moment.
+        -- Subsequent edits to the Drawing do not affect already-
+        -- generated embeds. See Embed.Immutability.
+        --
+        -- An empty Drawing cannot produce an embed; the embed
+        -- action is disabled in the editor when drawing.is_empty.
+}
+
+-- ── Viewer session ─────────────────────────────────────────
+
+rule ViewerDataResolved {
+    when: ViewerReceivesData(payload)
+    ensures:
+        if valid(payload) and parsed_strokes(payload).count >= 1:
+            Drawing.created(
+                strokes: parsed_strokes(payload),
+                viewpoint: parsed_viewpoint(payload),
+                theme: parsed_theme(payload),
+                interaction_mode: select,
+                current_color: default_color,
+                current_weight: default_weight,
+                history: [],
+                history_head: 0
+            )
+        else:
+            ViewerDataLoadFailed(reason: invalid_or_empty_payload)
+
+    @guidance
+        -- ViewerDataLoadFailed must produce a user-visible message
+        -- ("unable to load drawing"). Silent failure with an empty
+        -- canvas is not acceptable (Q13 decision).
+}
+
+rule ViewerResetToInitialView {
+    when: ResetView(drawing)
+    ensures:
+        drawing.viewpoint = drawing.initial_viewpoint
+
+    @guidance
+        -- Resets rotation, pan, depth and projection to the values
+        -- present when the drawing was loaded. Does NOT reset the
+        -- theme, which is the viewer's session preference (Q15).
+}
+
+rule ViewerTransitionToEditor {
+    when: OpenInEditor(drawing)
+    ensures:
+        -- A new editor session is opened with the drawing's
+        -- current state — including whatever rotation, pan,
+        -- depth and theme the viewer has set during exploration.
+        EditorOpened(
+            source: drawing,
+            viewpoint: drawing.viewpoint,
+            theme: drawing.theme
+        )
+}
+
+rule ViewerCopyData {
+    when: CopyViewerData(drawing)
+    ensures:
+        ClipboardUpdated(
+            content: serialize_f3d(drawing)
+        )
+
+    @guidance
+        -- The copied data reflects the viewer's current state,
+        -- including any rotation/pan/depth the viewer has applied.
+        -- This is intentional: it lets the viewer curate a preferred
+        -- angle and paste it into a Casiopea widget's `data` field
+        -- to publish the same drawing with a different view (Q16).
+}
+
+-- ── View manipulation (shared by Editor and Viewer) ────────
+
+rule ApplyViewPreset {
+    when: ApplyViewPreset(drawing, preset)
+    ensures:
+        drawing.viewpoint.rotation = preset_rotation(preset)
+
+    @guidance
+        -- Triggers a smooth animated transition to the target
+        -- rotation. Pan and depth are not affected. Projection is
+        -- not affected.
+}
+
+rule ToggleProjection {
+    when: ToggleProjection(drawing)
+    ensures:
+        drawing.viewpoint.projection =
+            if drawing.viewpoint.projection = orthographic:
+                perspective
+            else:
+                orthographic
+}
+
+rule ToggleTheme {
+    when: ToggleTheme(drawing)
+    ensures:
+        drawing.theme =
+            if drawing.theme = dark: light else: dark
+        for s in drawing.strokes:
+            s.color = invert_color(s.color)
+
+    @guidance
+        -- Theme toggling inverts the colors of all existing
+        -- strokes. This applies in BOTH the Editor and the Viewer
+        -- surfaces, consistent with SurfaceBehaviorConsistency.
+        -- The invert is a per-stroke color flip, not a display
+        -- filter: it is part of the Stroke's state after the
+        -- toggle.
+}
+
+rule ToggleDepthMode {
+    when: ToggleDepthMode(drawing)
+    ensures:
+        drawing.viewpoint.depth_mode_active =
+            not drawing.viewpoint.depth_mode_active
+}
+
+rule AdjustDepth {
+    when: AdjustDepth(drawing, delta)
+    requires: drawing.viewpoint.depth_mode_active = true
+    ensures:
+        drawing.viewpoint.depth = drawing.viewpoint.depth + delta
+
+    @guidance
+        -- Depth is what the viewer used to call "zoom". The two are
+        -- the same concept. Adjustment happens via:
+        --   desktop keyboard: hold D + scroll wheel
+        --   desktop panel:    toggle depth mode button + scroll
+        --   tablet:           toggle depth mode button +
+        --                     two-finger vertical drag
+        --   accessible:       toggle depth mode button + panel
+        --                     plus/minus controls (WCAG fallback)
+}
+
+
+------------------------------------------------------------
+-- Invariants
+------------------------------------------------------------
+
+invariant StrokeCapturedOnViewPlane {
+    -- The cornerstone invariant of Filippo 3D. Every Stroke is
+    -- captured with each point at z = 0 in the coordinate frame
+    -- of the Viewpoint active at capture time. The stroke's
+    -- position in model space is determined by that Viewpoint's
+    -- inverse transformation. "Draw on glass in front of a 3D
+    -- scene" is this invariant in plain language.
+    --
+    -- This is asserted as prose because expressing "view-local
+    -- coordinates at capture time" in the current Allium
+    -- expression language requires historical observation that
+    -- invariants do not have. The invariant is enforced by
+    -- StrokeStarts and PointAppendedDuringDrawing in combination
+    -- with the input translation from screen to view coordinates.
+    for s in Strokes:
+        true  -- see prose above
+}
+
+invariant EmbedRequiresNonEmptyDrawing {
+    -- No Embed exists whose snapshot is empty.
+    for e in Embeds:
+        e.snapshot_strokes.count >= 1
+}
+
+invariant ViewerDoesNotMutateDrawing {
+    -- Actions exposed by the ViewerSurface never modify the
+    -- source Drawing's strokes. Viewer actions may only affect
+    -- the Drawing's viewpoint and theme (which in the viewer
+    -- are session-local preferences that do not persist beyond
+    -- the session).
+    --
+    -- This is asserted as prose because Allium does not express
+    -- "no rule triggered from Surface X writes to field Y". The
+    -- guarantee is enforced at the surface level: the
+    -- ViewerSurface does not expose actions that mutate strokes.
+    for d in Drawings: true
+}
+
+@invariant SurfaceBehaviorConsistency
+    -- Operations shared between EditorSurface and ViewerSurface
+    -- (orbit, pan, view preset, toggle projection, toggle theme,
+    -- toggle depth mode, adjust depth) produce identical behaviour
+    -- in both surfaces. The only difference between surfaces is
+    -- which operations are exposed, not how any shared operation
+    -- behaves.
+
+
+------------------------------------------------------------
+-- Actor Declarations
+------------------------------------------------------------
+
+actor User {
+    identified_by: User
+    -- Filippo 3D has no authentication. Any person interacting
+    -- with a Drawing is a User. The distinction between "author"
+    -- and "viewer" is which Surface they are currently on, not
+    -- who they are.
+}
+
+
+------------------------------------------------------------
+-- Surfaces
+------------------------------------------------------------
+
+surface EditorSurface {
+    facing user: User
+    context drawing: Drawing
+
+    exposes:
+        drawing.strokes
+        drawing.viewpoint
+        drawing.interaction_mode
+        drawing.theme
+        drawing.current_color
+        drawing.current_weight
+        drawing.can_undo
+        drawing.can_redo
+        drawing.is_empty
+
+    provides:
+        -- Drawing
+        StartStroke(user, drawing, initial_point)
+            when drawing.interaction_mode = draw
+        AppendPoint(user, stroke, sample)
+            when stroke.state = being_drawn
+        FinishStroke(user, stroke)
+            when stroke.state = being_drawn
+
+        -- Mode
+        SetInteractionMode(user, drawing, mode)
+
+        -- Selection and transform
+        SelectStroke(user, drawing, stroke)
+            when drawing.interaction_mode = select
+        ClearSelection(user, drawing)
+        TransformSelection(user, drawing, transformation)
+            when drawing.interaction_mode = select
+        EraseSelection(user, drawing)
+            when drawing.interaction_mode = select
+
+        -- Undo / redo
+        Undo(user, drawing) when drawing.can_undo or drawing.has_active_stroke
+        Redo(user, drawing) when drawing.can_redo
+
+        -- Viewpoint
+        Orbit(user, drawing, delta_rotation)
+        Pan(user, drawing, delta_pan)
+        RotateAroundAxis(user, drawing, axis, angle)
+        ScaleAlongAxis(user, drawing, axis, factor)
+        ApplyViewPreset(user, drawing, preset)
+        ToggleProjection(user, drawing)
+        ToggleDepthMode(user, drawing)
+        AdjustDepth(user, drawing, delta)
+            when drawing.viewpoint.depth_mode_active
+
+        -- Theme
+        ToggleTheme(user, drawing)
+
+        -- Persistence
+        NewDrawing(user, drawing)
+        LoadDrawing(user, drawing, source)
+        SaveDrawing(user, drawing)
+        ExportPNG(user, drawing)
+        ExportDXF(user, drawing)
+            when not drawing.is_empty
+        CreateEmbed(user, drawing)
+            when not drawing.is_empty
+
+    @guarantee DragOperationsHaveDiscreteAlternatives
+        -- Every drag-based operation exposed by this surface has
+        -- at least one non-drag alternative accessible from either
+        -- the keyboard or the panel, to support WCAG 2.5.7
+        -- Dragging Movements. The specific alternatives are
+        -- enumerated in the Transversal Shortcuts Audit (deferred).
+
+    @guidance KeyboardBindings
+        -- All bindings below are part of the product contract.
+        -- They are documented in the spec because Filippo 3D is a
+        -- teaching tool and its shortcuts are part of what users
+        -- learn and rely on.
+        --
+        --   Drawing:
+        --     hold Shift while drawing   → straight-line mode
+        --     ","                         → stroke weight decrease
+        --     "."                         → stroke weight increase
+        --     Cmd/Ctrl + Z                → undo
+        --     Cmd/Ctrl + Shift + Z        → redo
+        --     E                           → erase selection
+        --     N                           → new drawing
+        --
+        --   Mode:
+        --     V                           → toggle draw / select
+        --
+        --   View manipulation:
+        --     hold C + drag               → orbit (trackpad-friendly)
+        --     middle-click + drag         → orbit (mouse)
+        --     Shift + Space + drag        → orbit (two-key chord)
+        --     right-click + drag          → pan
+        --     Space + drag                → pan
+        --     hold X/Y/Z + drag           → rotate around axis
+        --     hold Shift + X/Y/Z + drag   → scale along axis
+        --     hold D + scroll wheel       → adjust depth (desktop)
+        --     panel button + two-finger drag
+        --                                 → adjust depth (tablet)
+        --
+        --   Presets:
+        --     F / T / B / L / R / K       → front/top/bottom/left/right/back
+        --     O                           → toggle ortho / perspective
+        --     G                           → toggle grid
+        --     M                           → toggle theme
+        --
+        --   Panel:
+        --     Tab                         → toggle panel
+        --     click reference cube        → toggle panel
+        --     ?                           → toggle help overlay
+        --
+        --   Persistence:
+        --     Cmd/Ctrl + S                → export PNG
+}
+
+surface ViewerSurface {
+    facing user: User
+    context drawing: Drawing
+
+    exposes:
+        drawing.strokes
+        drawing.viewpoint
+        drawing.theme
+
+    provides:
+        -- Viewpoint (identical to editor's shared operations)
+        Orbit(user, drawing, delta_rotation)
+        Pan(user, drawing, delta_pan)
+        ApplyViewPreset(user, drawing, preset)
+        ToggleProjection(user, drawing)
+        ToggleDepthMode(user, drawing)
+        AdjustDepth(user, drawing, delta)
+            when drawing.viewpoint.depth_mode_active
+
+        -- Theme (with color inversion, same as editor)
+        ToggleTheme(user, drawing)
+
+        -- Viewer-specific
+        ResetView(user, drawing)
+        CopyViewerData(user, drawing)
+        OpenInEditor(user, drawing)
+
+    @guarantee ReadOnlyWithRespectToDrawing
+        -- The ViewerSurface never exposes any action that modifies
+        -- drawing.strokes, drawing.history, or creates a new
+        -- Stroke, Embed, or UndoEntry associated with the source
+        -- Drawing. Viewpoint changes and theme toggles are scoped
+        -- to the session and do not persist beyond it.
+
+    @guarantee NoSessionPersistence
+        -- The viewer has no memory across page reloads. No state
+        -- (rotation, pan, depth, theme, projection) is stored in
+        -- localStorage, cookies, or any other persistence layer.
+        -- Reloading the viewer returns it to the exact state
+        -- defined by the loaded data source.
+
+    @guidance ViewerKeyboardBindings
+        -- Same shared bindings as Editor for orbit, pan, presets,
+        -- projection, theme, depth. Plus viewer-specific:
+        --
+        --   V or Home                   → reset to initial view
+        --   Arrow keys                  → orbit by small step
+        --   click reference cube        → open info modal
+        --
+        -- Copy data and Open in editor are reached via the info
+        -- modal buttons, not via keyboard shortcuts.
+
+    @guidance DataSourcePriority
+        -- The viewer resolves its data source in this order:
+        --   1. URL hash   (#d=<LZString-encoded JSON>)
+        --   2. Query param (?d=<LZString-encoded JSON>)
+        --   3. Inline global variable F3D_DATA
+        --   4. postMessage from parent window
+        --
+        -- If none is available or resolution fails, the viewer
+        -- displays a user-facing error message (see
+        -- ViewerDataResolved rule).
+}
+
+
+------------------------------------------------------------
+-- Open Questions
+------------------------------------------------------------
+
+open question "Single-key modifier for orbit-drag on trackpad decided as C;
+               should this be confirmed with user testing on a trackpad-only
+               device before it ships?"
+
+open question "Transversal audit of keyboard shortcuts and their discrete
+               (non-gesture) fallbacks for WCAG 2.5.1 / 2.5.7 / 2.1.4
+               compliance. Deferred to a later refinement pass as Path B
+               of the accessibility decision."
+
+open question "Casiopea widget data field length limit. No hard limit in
+               the spec until a real technical constraint is established
+               for the target platform."
+
+open question "Depth mode entry gesture on touch: panel button is the
+               entry point. Once active, two-finger vertical drag adjusts
+               depth. Is a slider in the panel also desirable as an
+               accessibility-friendly alternative?"
